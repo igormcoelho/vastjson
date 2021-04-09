@@ -19,11 +19,17 @@ namespace vastjson
         std::map<std::string, nlohmann::json> jsons;
         // read string cache
         std::map<std::string, std::string> cache;
+    private:
         // pending reads
-        std::shared_ptr<std::ifstream> ifsptr;
+        std::unique_ptr<std::ifstream> ifsptr;
         // count delimiters {} for ifsptr
         // this variable was local, now it's global since stream consumption can be continued over ifsptr
         int count_par_ifsptr = 0;
+
+    public:
+        bool isPending() {
+            return ifsptr != nullptr;
+        }
 
         unsigned size()
         {
@@ -32,7 +38,7 @@ namespace vastjson
                 // must cache all available entries (to calculate 'size()')
                 cacheUntil(*ifsptr, count_par_ifsptr, "");
                 // stream has been consumed, drop its memory pointer
-                ifsptr = std::shared_ptr<std::ifstream>();
+                ifsptr = std::unique_ptr<std::ifstream>();
             }
 
             return this->cache.size();
@@ -61,7 +67,7 @@ namespace vastjson
                     cacheUntil(*ifsptr, count_par_ifsptr, key);
                     // IF stream has been consumed, drop its memory pointer
                     if (ifsptr->eof())
-                        ifsptr = std::shared_ptr<std::ifstream>();
+                        ifsptr = std::unique_ptr<std::ifstream>();
                     // try again and update iterator
                     it2 = cache.find(key);
                     if (it2 == cache.end())
@@ -124,7 +130,7 @@ namespace vastjson
             cacheUntil(is, count_par, "");
         }
 
-        VastJSON(std::shared_ptr<std::ifstream> _ifsptr) : ifsptr{_ifsptr}
+        VastJSON(std::unique_ptr<std::ifstream>&& _ifsptr) : ifsptr{std::move(_ifsptr)}
         {
         }
 

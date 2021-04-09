@@ -37,16 +37,17 @@ TEST_CASE("bigj[\"B\"][\"B1\"] == 10")
 
 TEST_CASE("bigj partial consumption over ifstream")
 {
-    std::shared_ptr<std::ifstream> ifs(new std::ifstream("testdata/test2.json"));
-    VastJSON bigj(ifs);
+    std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
+    VastJSON bigj{std::move(ifs)};
+
     // stream must exist
-    REQUIRE(bigj.ifsptr);
+    REQUIRE(bigj.isPending());
     // key B and subkey B1 must be found
     REQUIRE(bigj["B"]["B1"] == 10);
     // stream must exist
-    REQUIRE(bigj.ifsptr);
+    REQUIRE(bigj.isPending());
     // size must be correct
     REQUIRE(bigj.size() == 3);
     // stream must not exist (due to size() consumption)
-    REQUIRE(!bigj.ifsptr);
+    REQUIRE(!bigj.isPending());
 }
