@@ -20,3 +20,17 @@ TEST_CASE("example size == 3")
     BigJSON bigj(local_example);
     REQUIRE(bigj.size() == 3);
 }
+
+TEST_CASE("bigj[\"B\"][\"B2\"] == \"abcd\"")
+{
+    std::string local_example = example;
+    BigJSON bigj(local_example);
+    REQUIRE(bigj["B"]["B2"] == "abcd");
+}
+
+TEST_CASE("bigj[\"B\"][\"B1\"] == 10")
+{
+    std::string local_example = example;
+    BigJSON bigj(local_example);
+    REQUIRE(bigj["B"]["B1"] == 10);
+}
