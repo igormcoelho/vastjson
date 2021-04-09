@@ -97,27 +97,25 @@ namespace vastjson
             std::string before;
             std::string content;
             int count_par = 0;
-            int target_field = 1; // starts from 1
-            bool presave = true;
-            bool save = false;
+            int target_field = 1;   // starts from 1
+            bool save = false;      // true if nested curly brackets
             //
             while (true)
             {
                 char c;
                 if (!is.get(c))
                     break; // EOF
-                if (presave)
+                if (!save)
                     before += c;
                 if (save)
                     content += c;
                 if (c == '{')
                 {
                     count_par++;
-                    if ((count_par == target_field + 1) && presave) // 2?
+                    if ((count_par == target_field + 1) && !save) // 2?
                     {
-                        save = true;
                         content += c;
-                        presave = false;
+                        save = true;
                     }
                 }
                 if (c == '}')
@@ -141,7 +139,6 @@ namespace vastjson
                         //content = std::stringstream();
                         content = "";
                         //
-                        presave = true;
                         save = false;
                     }
                     count_par--;
