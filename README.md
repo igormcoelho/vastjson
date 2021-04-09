@@ -115,7 +115,7 @@ bazel build ...
 
 Output should be:
 ```
-LOADED #KEYS = 2
+LOADED #KEYS = 3
 {}
 "abcd"
 {}
