@@ -98,7 +98,6 @@ namespace vastjson
             std::string content;
             int count_par = 0;
             int target_field = 1;   // starts from 1
-            // bool presave = true;
             bool save = false;      // true if nested curly brackets
             //
             while (true)
