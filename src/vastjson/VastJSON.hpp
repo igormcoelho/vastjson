@@ -11,8 +11,7 @@
 
 namespace vastjson
 {
-
-    class VastJSON
+    class VastJSON final
     {
     public:
         // multiple json
@@ -28,19 +27,24 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
-        bool isPending()
+        bool isPending() const
         {
             return ifsptr != nullptr;
         }
 
-        unsigned size()
+        // return number of top-level entries (not REALLY const...)
+        unsigned size() const
         {
             if (ifsptr)
             {
+                // sorry, this is quite fake, but necessary!
+                // I know what I'm doing!
+                VastJSON *me = const_cast<VastJSON *>(this);
+                //
                 // must cache all available entries (to calculate 'size()')
-                cacheUntil(*ifsptr, count_par_ifsptr);
+                me->cacheUntil(*me->ifsptr, me->count_par_ifsptr);
                 // stream has been consumed, drop its memory pointer
-                ifsptr = std::unique_ptr<std::ifstream>();
+                me->ifsptr = std::unique_ptr<std::ifstream>();
             }
 
             return this->cache.size();
@@ -60,9 +64,25 @@ namespace vastjson
             }
         }
 
+        // gets key json
         nlohmann::json &operator[](std::string key)
         {
             return this->getKey(key);
+        }
+
+        // gets key json (not REALLY const...)
+        const nlohmann::json &operator[](std::string key) const
+        {
+            return this->getKey(key);
+        }
+
+        // get key in json structured format (not REALLY const...)
+        const nlohmann::json &getKey(std::string key) const
+        {
+            // sorry, this is quite fake, but necessary!
+            // I know what I'm doing!
+            VastJSON *me = const_cast<VastJSON *>(this);
+            return me->getKey(key);
         }
 
         // get key in json structured format
