@@ -4,7 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
-#include <optional>
+#include <memory>
 //
 #include <nlohmann/json.hpp>
 //using json = nlohmann::json;
@@ -19,9 +19,22 @@ namespace vastjson
         std::map<std::string, nlohmann::json> jsons;
         // read string cache
         std::map<std::string, std::string> cache;
+        // pending reads
+        std::shared_ptr<std::ifstream> ifsptr;
+        // count delimiters {} for ifsptr
+        // this variable was local, now it's global since stream consumption can be continued over ifsptr
+        int count_par_ifsptr = 0;
 
         unsigned size()
         {
+            if (ifsptr)
+            {
+                // must cache all available entries (to calculate 'size()')
+                cacheUntil(*ifsptr, count_par_ifsptr, "");
+                // stream has been consumed, drop its memory pointer
+                ifsptr = std::shared_ptr<std::ifstream>();
+            }
+
             return this->cache.size();
         }
 
@@ -41,7 +54,23 @@ namespace vastjson
             auto it2 = cache.find(key);
             if (it2 == cache.end())
             {
-                //std::cerr << "BigJSON::getKey() error: key '" << key << "' does not exist!" << std::endl;
+                // CHECK IF THERE'S MORE TO READ IN 'ifsptr'
+                if (ifsptr)
+                {
+                    // must cache all available entries (to calculate 'size()')
+                    cacheUntil(*ifsptr, count_par_ifsptr, key);
+                    // IF stream has been consumed, drop its memory pointer
+                    if (ifsptr->eof())
+                        ifsptr = std::shared_ptr<std::ifstream>();
+                    // try again and update iterator
+                    it2 = cache.find(key);
+                    if (it2 == cache.end())
+                    {
+                        // NOTHING ELSE TO DO... KEY DOES NOT EXIST!
+                        //
+                        //std::cerr << "BigJSON::getKey() error: key '" << key << "' does not exist!" << std::endl;
+                    }
+                }
             }
             if (cache[key] == "")
             {
@@ -57,13 +86,13 @@ namespace vastjson
         // unload json structure and do not keep string cache
         void unload(std::string key)
         {
+            cache[key] = ""; // mark as empty
             auto it = jsons.find(key);
             if (it == jsons.end())
             {
                 //std::cerr << "BigJSON::unload() error: json key '" << key << "' does not exist!" << std::endl;
             }
             jsons.erase(it); // drop json structure
-            cache[key] = ""; // mark as empty
         }
 
         // move json structure back to string cache (since json structured format may be more memory costly)
@@ -81,22 +110,35 @@ namespace vastjson
             cache[key] = ssjson.str(); // keep string in cache
         }
 
-        VastJSON(std::string& str)
+        VastJSON(std::string &str)
         {
             std::istringstream is(str);
-            process(is);
+            int count_par = 0; // reading from level 0
+            cacheUntil(is, count_par, "");
         }
 
         VastJSON(std::istream &is)
         {
-            process(is);
+            int count_par = 0; // reading from level 0
+            cacheUntil(is, count_par, "");
         }
 
-        void process(std::istream &is)
+        VastJSON(std::shared_ptr<std::ifstream> _ifsptr) : ifsptr{_ifsptr}
+        {
+        }
+
+        ~VastJSON()
+        {
+        }
+
+    private:
+        //
+        // perform string caching until 'targetKey' is found (or stream is ended)
+        void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "")
         {
             std::string before;
             std::string content;
-            int count_par = 0;
+            //
             int target_field = 1; // starts from 1
             bool presave = true;
             bool save = false;
@@ -128,9 +170,9 @@ namespace vastjson
                         //std::cout << "RESTART = " << sbefore << std::endl;
                         //
                         // 1-get field name
-						unsigned keyStart = before.find('\"') + 1;
-						unsigned keySize = before.find('\"', keyStart+1) - keyStart;
-						std::string field_name = before.substr(keyStart, keySize);
+                        unsigned keyStart = before.find('\"') + 1;
+                        unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
+                        std::string field_name = before.substr(keyStart, keySize);
                         before = "";
                         //2-move string to cache
                         cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!
@@ -143,15 +185,20 @@ namespace vastjson
                         //
                         presave = true;
                         save = false;
+                        // if 'targetKey' is found, stop reading
+                        if ((targetKey != "") && (field_name == targetKey))
+                        {
+                            // perform count_par decrease and stop (for now)
+                            count_par--;
+                            break;
+                        }
                     }
                     count_par--;
                 }
             }
         }
 
-        ~VastJSON()
-        {
-        }
+    public:
     };
 
 } // namespace vastjson

@@ -10,6 +10,6 @@ cc_library(
     hdrs = glob([
         "**/*.hpp",
     ]),
-    copts = ['-std=c++17', '-Ofast', '-fconcepts', '-Wfatal-errors'],
+    copts = ['-std=c++11', '-Ofast', '-Wfatal-errors'],
     include_prefix = "vastjson",
 )
