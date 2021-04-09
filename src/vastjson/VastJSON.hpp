@@ -141,7 +141,6 @@ namespace vastjson
             std::string content;
             //
             int target_field = 1; // starts from 1
-            bool presave = true;
             bool save = false;
             //
             while (true)
@@ -160,8 +159,6 @@ namespace vastjson
                     {
                         content += c;
                         save = true;
-                        content += c;
-                        presave = false;
                     }
                 }
                 if (c == '}')
@@ -184,8 +181,7 @@ namespace vastjson
                         //before = std::stringstream();
                         //content = std::stringstream();
                         content = "";
-                        //
-                        presave = true;
+                        //                        
                         save = false;
                         // if 'targetKey' is found, stop reading
                         if ((targetKey != "") && (field_name == targetKey))
