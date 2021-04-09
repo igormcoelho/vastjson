@@ -93,6 +93,7 @@ namespace vastjson
                 //std::cerr << "BigJSON::unload() error: json key '" << key << "' does not exist!" << std::endl;
             }
             jsons.erase(it); // drop json structure
+            cache[key] = ""; // mark as empty
         }
 
         // move json structure back to string cache (since json structured format may be more memory costly)
@@ -110,7 +111,7 @@ namespace vastjson
             cache[key] = ssjson.str(); // keep string in cache
         }
 
-        VastJSON(std::string &str)
+        VastJSON(std::string& str)
         {
             std::istringstream is(str);
             int count_par = 0; // reading from level 0
@@ -148,15 +149,16 @@ namespace vastjson
                 char c;
                 if (!is.get(c))
                     break; // EOF
-                if (presave)
+                if (!save)
                     before += c;
                 if (save)
                     content += c;
                 if (c == '{')
                 {
                     count_par++;
-                    if ((count_par == target_field + 1) && presave) // 2?
+                    if ((count_par == target_field + 1) && !save) // 2?
                     {
+                        content += c;
                         save = true;
                         content += c;
                         presave = false;
