@@ -112,6 +112,78 @@ int main() {
 }
 ```
 
+### Lazy loading giant files
+
+If stream file ownership is given to VastJSON, it will only consume necessary parts of JSON.
+
+``` 
+{
+    "A" : { },
+    "B" : { 
+            "B1":10,
+            "B2":"abcd" 
+          },
+    "C" : { },
+    "Z" : { }
+}
+```
+
+
+```
+        vastjson::VastJSON bigj3(new std::ifstream("demo/test3.json"));
+    // pending operations
+    std::cout << "isPending(): " << bigj3.isPending() << std::endl;
+    // cache size
+    std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;
+    std::cout << "getUntil(\"\",1) first key is found" << std::endl;
+    // get first keys
+    bigj3.getUntil("", 1);
+    // iterate over top-level keys (cached only!)
+    for (auto it = bigj3.begin(); it != bigj3.end(); it++)
+        std::cout << it->first << std::endl;
+    // direct access will load more
+    std::cout << "direct access to bigj3[\"B\"][\"B1\"] = " << bigj3["B"]["B1"] << std::endl;
+    // cache size
+    std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;    
+    // still pending
+    std::cout << "isPending(): " << bigj3.isPending() << std::endl;
+    // iterate over top-level keys (cached only!)
+    for (auto it = bigj3.begin(); it != bigj3.end(); it++)
+        std::cout << it->first << std::endl;
+
+    // real size (will force performing top-level indexing)
+    std::cout << "compute size will force top-level indexing...\nsize(): " << bigj3.size() << std::endl;
+    // cache size
+    std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;    
+    // not pending anymore
+    std::cout << "isPending(): " << bigj3.isPending() << std::endl;
+    // iterate over top-level keys (cached only!)
+    for (auto it = bigj3.begin(); it != bigj3.end(); it++)
+        std::cout << it->first << std::endl;
+```
+
+Output:
+
+```
+isPending(): 1
+cacheSize(): 0
+getUntil("",1) first key is found
+A
+direct access to bigj3["B"]["B1"] = 10
+cacheSize(): 2
+isPending(): 1
+A
+B
+compute size will force top-level indexing...
+ size(): 4
+cacheSize(): 4
+isPending(): 0
+A
+B
+C
+Z
+```
+
 ### Build with Bazel
 
 ```

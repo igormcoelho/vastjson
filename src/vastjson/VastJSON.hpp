@@ -13,13 +13,11 @@ namespace vastjson
 {
     class VastJSON final
     {
-    public:
+    private:
         // multiple json
         std::map<std::string, nlohmann::json> jsons;
         // read string cache
         std::map<std::string, std::string> cache;
-
-    private:
         // pending reads
         std::unique_ptr<std::ifstream> ifsptr;
         // count delimiters {} for ifsptr
@@ -27,9 +25,25 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
+        const auto begin() const
+        {
+            return cache.begin();
+        }
+
+        const auto end() const
+        {
+            return cache.end();
+        }
+
         bool isPending() const
         {
             return ifsptr != nullptr;
+        }
+
+        // cached items size. Note that: cacheSize() <= size()
+        unsigned cacheSize() const
+        {
+            return this->cache.size();
         }
 
         // return number of top-level entries (not REALLY const...)
@@ -153,6 +167,11 @@ namespace vastjson
             cache[key] = ssjson.str(); // keep string in cache
         }
 
+        // ======================
+        //     constructors
+        // ======================
+
+        // string will be immediately processed (for top-level items)
         VastJSON(std::string &str)
         {
             std::istringstream is(str);
@@ -160,13 +179,25 @@ namespace vastjson
             cacheUntil(is, count_par);
         }
 
+        // istream will be immediately processed (for top-level items)
         VastJSON(std::istream &is)
         {
             int count_par = 0; // reading from level 0
             cacheUntil(is, count_par);
         }
 
+        // lazy processing
         VastJSON(std::unique_ptr<std::ifstream> &&_ifsptr) : ifsptr{std::move(_ifsptr)}
+        {
+        }
+
+        // lazy processing
+        VastJSON(std::ifstream &&_if) : ifsptr{new std::ifstream{std::move(_if)}}
+        {
+        }
+
+        // lazy processing: transfer ownership of _if to VastJSON
+        VastJSON(std::ifstream* _if) : ifsptr{_if}
         {
         }
 

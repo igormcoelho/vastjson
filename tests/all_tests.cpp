@@ -35,6 +35,17 @@ TEST_CASE("bigj[\"B\"][\"B1\"] == 10")
     REQUIRE(bigj["B"]["B1"] == 10);
 }
 
+TEST_CASE("bigj isPending()")
+{
+    // lazy processing
+    VastJSON bigj1{new std::ifstream("testdata/test2.json")};
+    REQUIRE(bigj1.isPending());
+    // empty json (immediate processing)
+    std::string str = "{}";
+    VastJSON bigj2{str};
+    REQUIRE(!bigj2.isPending());
+}
+
 TEST_CASE("bigj partial consumption over ifstream")
 {
     std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
@@ -60,21 +71,21 @@ TEST_CASE("bigj getUntil")
     // stream must exist
     REQUIRE(bigj.isPending());
     // cache size must be zero
-    REQUIRE(bigj.cache.size() == 0);
+    REQUIRE(bigj.cacheSize() == 0);
     // get one element
     bigj.getUntil("", 1);
     // cache size must be one
-    REQUIRE(bigj.cache.size() == 1);
+    REQUIRE(bigj.cacheSize() == 1);
     // get until "B" is found
     bigj.getUntil("B");
     // cache size must be two
-    REQUIRE(bigj.cache.size() == 2);
+    REQUIRE(bigj.cacheSize() == 2);
     // stream must exist
     REQUIRE(bigj.isPending());
     // get unlimited (empty targetKey and no count_keys)
     bigj.getUntil();
     // cache size must be three
-    REQUIRE(bigj.cache.size() == 3);
+    REQUIRE(bigj.cacheSize() == 3);
     // stream must not exist
     REQUIRE(!bigj.isPending());
 }
