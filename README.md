@@ -54,6 +54,12 @@ Imagine you have a SINGLE (or a few) top-level entries, with all the burden insi
 
 Definitely, do NOT use this library, if that's your case.
 
+## Known Issues
+
+Right now, this is already used on practice for very large databases!
+
+Anyway, there's a terrible drawback: no internal string can contain "{" or "}". This is easy to fix, but not fixed yet. 
+
 ## Usage
 
 ```{cpp}
