@@ -141,7 +141,6 @@ namespace vastjson
                         content = "";
                         //
                         save = false;
-                        // presave = true;
                     }
                     count_par--;
                 }
