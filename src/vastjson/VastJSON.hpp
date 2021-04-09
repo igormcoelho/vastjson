@@ -19,6 +19,7 @@ namespace vastjson
         std::map<std::string, nlohmann::json> jsons;
         // read string cache
         std::map<std::string, std::string> cache;
+
     private:
         // pending reads
         std::unique_ptr<std::ifstream> ifsptr;
@@ -27,7 +28,8 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
-        bool isPending() {
+        bool isPending()
+        {
             return ifsptr != nullptr;
         }
 
@@ -36,12 +38,26 @@ namespace vastjson
             if (ifsptr)
             {
                 // must cache all available entries (to calculate 'size()')
-                cacheUntil(*ifsptr, count_par_ifsptr, "");
+                cacheUntil(*ifsptr, count_par_ifsptr);
                 // stream has been consumed, drop its memory pointer
                 ifsptr = std::unique_ptr<std::ifstream>();
             }
 
             return this->cache.size();
+        }
+
+        // public method: advance on stream until 'targetKey' key is found, or 'count_keys' keys are found
+        void getUntil(std::string targetKey = "", int count_keys = -1)
+        {
+            if (ifsptr)
+            {
+                // must cache all available entries (to calculate 'size()')
+                cacheUntil(*ifsptr, count_par_ifsptr, targetKey, count_keys);
+
+                // IF stream has been consumed, drop its memory pointer
+                if (ifsptr->eof())
+                    ifsptr = std::unique_ptr<std::ifstream>();
+            }
         }
 
         nlohmann::json &operator[](std::string key)
@@ -117,20 +133,20 @@ namespace vastjson
             cache[key] = ssjson.str(); // keep string in cache
         }
 
-        VastJSON(std::string& str)
+        VastJSON(std::string &str)
         {
             std::istringstream is(str);
             int count_par = 0; // reading from level 0
-            cacheUntil(is, count_par, "");
+            cacheUntil(is, count_par);
         }
 
         VastJSON(std::istream &is)
         {
             int count_par = 0; // reading from level 0
-            cacheUntil(is, count_par, "");
+            cacheUntil(is, count_par);
         }
 
-        VastJSON(std::unique_ptr<std::ifstream>&& _ifsptr) : ifsptr{std::move(_ifsptr)}
+        VastJSON(std::unique_ptr<std::ifstream> &&_ifsptr) : ifsptr{std::move(_ifsptr)}
         {
         }
 
@@ -141,7 +157,7 @@ namespace vastjson
     private:
         //
         // perform string caching until 'targetKey' is found (or stream is ended)
-        void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "")
+        void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
         {
             std::string before;
             std::string content;
@@ -187,7 +203,7 @@ namespace vastjson
                         //before = std::stringstream();
                         //content = std::stringstream();
                         content = "";
-                        //                        
+                        //
                         save = false;
                         // if 'targetKey' is found, stop reading
                         if ((targetKey != "") && (field_name == targetKey))
@@ -195,6 +211,19 @@ namespace vastjson
                             // perform count_par decrease and stop (for now)
                             count_par--;
                             break;
+                        }
+                        // check if count_keys is enabled (>= 0)
+                        if (count_keys >= 0)
+                        {
+                            // counting is enabled.. must decrease one key
+                            count_keys--;
+                            // check if count has been reached
+                            if (count_keys == 0)
+                            {
+                                // perform count_par decrease and stop (for now)
+                                count_par--;
+                                break;
+                            }
                         }
                     }
                     count_par--;

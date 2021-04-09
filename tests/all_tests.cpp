@@ -51,3 +51,30 @@ TEST_CASE("bigj partial consumption over ifstream")
     // stream must not exist (due to size() consumption)
     REQUIRE(!bigj.isPending());
 }
+
+TEST_CASE("bigj getUntil")
+{
+    std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
+    VastJSON bigj{std::move(ifs)};
+
+    // stream must exist
+    REQUIRE(bigj.isPending());
+    // cache size must be zero
+    REQUIRE(bigj.cache.size() == 0);
+    // get one element
+    bigj.getUntil("", 1);
+    // cache size must be one
+    REQUIRE(bigj.cache.size() == 1);
+    // get until "B" is found
+    bigj.getUntil("B");
+    // cache size must be two
+    REQUIRE(bigj.cache.size() == 2);
+    // stream must exist
+    REQUIRE(bigj.isPending());
+    // get unlimited (empty targetKey and no count_keys)
+    bigj.getUntil();
+    // cache size must be three
+    REQUIRE(bigj.cache.size() == 3);
+    // stream must not exist
+    REQUIRE(!bigj.isPending());
+}
