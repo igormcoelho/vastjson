@@ -1,11 +1,34 @@
 # bigjson
 BigJSON library in C++: structured json with high level cached items (for giant JSON files)
 
-## Run tests
+## Run tests and use
 
 ```
 cd tests && make
 ```
+
+This is "almost" a Single Header library, named [BigJSON.hpp](./src/bigjson/BigJSON.hpp), just copy it into your project, but remember to copy its only dependency together: [json.hpp](./libs/nlohmann/json.hpp).
+
+If you prefer, you can blend these files together, into a single header file (maybe we can also provide that for future official releases).
+
+### Bazel
+If you use Bazel Build, just add this into your `WORKSPACE.bazel`:
+
+```
+git_repository(
+    name='BigJSON',
+    remote='https://github.com/igormcoelho/bigjson.git',
+    branch='main'
+)
+```
+
+In `BUILD.bazel`, add this dependency:
+```
+deps = ["@BigJSON//src/bigjson:bigjson_lib"]
+```
+
+Then, just `#include <bigjson/BigJSON.hpp>` in your C++ source files.
+
 
 ## Why is it for?
 
