@@ -11,24 +11,6 @@ This is "almost" a Single Header library, named [BigJSON.hpp](./src/bigjson/BigJ
 
 If you prefer, you can blend these files together, into a single header file (maybe we can also provide that for future official releases).
 
-### Bazel
-If you use Bazel Build, just add this into your `WORKSPACE.bazel`:
-
-```
-git_repository(
-    name='BigJSON',
-    remote='https://github.com/igormcoelho/bigjson.git',
-    branch='main'
-)
-```
-
-In `BUILD.bazel`, add this dependency:
-```
-deps = ["@BigJSON//src/bigjson:bigjson_lib"]
-```
-
-Then, just `#include <bigjson/BigJSON.hpp>` in your C++ source files.
-
 
 ## Why is it for?
 
@@ -95,12 +77,67 @@ Anyway, there's a terrible drawback: no internal string can contain "{" or "}". 
 
 ## Usage
 
-```{cpp}
-    std::ifstream if_test("demo/test.json");
-    bigjson::BigJSON bigj(if_test);
-    std::cout << "LOADED #KEYS = " << bigj.size() << std::endl;
-    // more info coming next...
+Consider JSON:
+
+```{.json}
+{
+    "A" : { },
+    "B" : { 
+            "B1":10,
+            "B2":"abcd" 
+          },
+    "Z" : { }
+}
 ```
+
+```{.cpp}
+    #include <bigjson/BigJSON.hpp>
+    #include <iostream>
+    // ...
+
+int main() {
+    std::ifstream if_test2("demo/test2.json");
+    bigjson::BigJSON bigj2(if_test2);
+    std::cout << "LOADED #KEYS = " << bigj2.size() << std::endl; // 3
+    std::cout << bigj2["A"] << std::endl;
+    std::cout << bigj2["B"]["B2"] << std::endl;
+    std::cout << bigj2["Z"] << std::endl;
+    // ...
+}
+```
+
+### Build with Bazel
+
+```
+bazel build ...
+./bazel-bin/app_demo
+```
+
+Output should be:
+```
+LOADED #KEYS = 2
+{}
+"abcd"
+{}
+```
+
+### Using Bazel
+If you use Bazel Build, just add this into your `WORKSPACE.bazel`:
+
+```
+git_repository(
+    name='BigJSON',
+    remote='https://github.com/igormcoelho/bigjson.git',
+    branch='main'
+)
+```
+
+In `BUILD.bazel`, add this dependency:
+```
+deps = ["@BigJSON//src/bigjson:bigjson_lib"]
+```
+
+Then, just `#include <bigjson/BigJSON.hpp>` in your C++ source files.
 
 ## License
 
