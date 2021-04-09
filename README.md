@@ -90,6 +90,8 @@ Consider JSON:
 }
 ```
 
+And file `main.cpp` (see `demo/` folder):
+
 ```{.cpp}
     #include <bigjson/BigJSON.hpp>
     #include <iostream>
