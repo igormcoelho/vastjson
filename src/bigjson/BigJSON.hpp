@@ -81,7 +81,18 @@ namespace bigjson
             cache[key] = ssjson.str(); // keep string in cache
         }
 
+        BigJSON(std::string& str)
+        {
+            std::istringstream is(str);
+            process(is);
+        }
+
         BigJSON(std::istream &is)
+        {
+            process(is);
+        }
+
+        void process(std::istream &is)
         {
             std::string before;
             std::string content;

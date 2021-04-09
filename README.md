@@ -1,6 +1,12 @@
 # bigjson
 BigJSON library in C++: structured json with high level cached items (for giant JSON files)
 
+## Run tests
+
+```
+cd tests && make
+```
+
 ## Why is it for?
 
 There exist amazing libraries for JSON in C++, such as nlohmann::json and RapidJSON.
