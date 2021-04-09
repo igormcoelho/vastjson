@@ -128,21 +128,10 @@ namespace bigjson
                         //std::cout << "RESTART = " << sbefore << std::endl;
                         //
                         // 1-get field name
-                        std::string field_name;
-                        for (unsigned i = 0; i < before.length(); i++)
-                        {
-                            if (before[i] == '\"')
-                            {
-                                for (unsigned j = i + 1; j < before.length(); j++)
-                                {
-                                    if (before[j] != '\"')
-                                        field_name += before[j];
-                                    else
-                                        break;
-                                }
-                                break;
-                            }
-                        }
+						unsigned keyStart = before.find('\"') + 1;
+						unsigned keySize = before.find('\"', keyStart+1) - keyStart;
+						std::string field_name = before.substr(keyStart, keySize);
+						std::cout << before.substr(keyStart, keySize) << "\n";
                         before = "";
                         //2-move string to cache
                         cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!
