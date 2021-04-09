@@ -20,6 +20,16 @@ namespace bigjson
         // read string cache
         std::map<std::string, std::string> cache;
 
+        unsigned size()
+        {
+            return this->cache.size();
+        }
+
+        nlohmann::json &operator[](std::string key)
+        {
+            return this->getKey(key);
+        }
+
         // get key in json structured format
         nlohmann::json &getKey(std::string key)
         {
@@ -69,11 +79,6 @@ namespace bigjson
             ssjson << jsons[key];
             unload(key);               // unload json structure
             cache[key] = ssjson.str(); // keep string in cache
-        }
-
-        unsigned size()
-        {
-            return this->cache.size();
         }
 
         BigJSON(std::istream &is)

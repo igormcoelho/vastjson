@@ -54,6 +54,10 @@ Imagine you have a SINGLE (or a few) top-level entries, with all the burden insi
 
 Definitely, do NOT use this library, if that's your case.
 
+## How is this implemented?
+
+Currently, it uses the [nice json library from nlohmann](https://github.com/nlohmann/json).
+
 ## Known Issues
 
 Right now, this is already used on practice for very large databases!
