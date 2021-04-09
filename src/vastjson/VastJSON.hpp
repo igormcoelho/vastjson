@@ -116,7 +116,6 @@ namespace vastjson
                     {
                         content += c;
                         save = true;
-                        // presave = false;
                     }
                 }
                 if (c == '}')
