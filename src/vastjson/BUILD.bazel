@@ -6,10 +6,10 @@ package(
 
 
 cc_library(
-    name = "bigjson_lib",
+    name = "vastjson_lib",
     hdrs = glob([
         "**/*.hpp",
     ]),
     copts = ['-std=c++17', '-Ofast', '-fconcepts', '-Wfatal-errors'],
-    include_prefix = "bigjson",
+    include_prefix = "vastjson",
 )

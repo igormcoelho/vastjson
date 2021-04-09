@@ -1,5 +1,9 @@
-# bigjson
-BigJSON library in C++: structured json with high level cached items (for giant JSON files)
+# vastjson
+VastJSON library in C++: structured json with high level cached items (for giant JSON files)
+
+## Why name it VastJSON?
+
+Names like Big, Large, Huge, were already taken... so we found something BIGGER, LARGER... and FAST! So it's VastJSON :)
 
 ## Run tests and use
 
@@ -7,7 +11,7 @@ BigJSON library in C++: structured json with high level cached items (for giant 
 cd tests && make
 ```
 
-This is "almost" a Single Header library, named [BigJSON.hpp](./src/bigjson/BigJSON.hpp), just copy it into your project, but remember to copy its only dependency together: [json.hpp](./libs/nlohmann/json.hpp).
+This is "almost" a Single Header library, named [VastJSON.hpp](./src/vastjson/VastJSON.hpp), just copy it into your project, but remember to copy its only dependency together: [json.hpp](./libs/nlohmann/json.hpp).
 
 If you prefer, you can blend these files together, into a single header file (maybe we can also provide that for future official releases).
 
@@ -48,7 +52,7 @@ Example in C++:
 
 ```{cpp}
     std::ifstream if_test("demo/test.json");
-    bigjson::BigJSON bigj(if_test);
+    vastjson::VastJSON bigj(if_test);
     std::cout << "LOADED #KEYS = " << bigj.size() << std::endl;
 ```
 
@@ -93,13 +97,13 @@ Consider JSON:
 And file `main.cpp` (see `demo/` folder):
 
 ```{.cpp}
-    #include <bigjson/BigJSON.hpp>
+    #include <vastjson/VastJSON.hpp>
     #include <iostream>
     // ...
 
 int main() {
     std::ifstream if_test2("demo/test2.json");
-    bigjson::BigJSON bigj2(if_test2);
+    vastjson::VastJSON bigj2(if_test2);
     std::cout << "LOADED #KEYS = " << bigj2.size() << std::endl; // 3
     std::cout << bigj2["A"] << std::endl;
     std::cout << bigj2["B"]["B2"] << std::endl;
@@ -128,18 +132,18 @@ If you use Bazel Build, just add this into your `WORKSPACE.bazel`:
 
 ```
 git_repository(
-    name='BigJSON',
-    remote='https://github.com/igormcoelho/bigjson.git',
+    name='VastJSON',
+    remote='https://github.com/igormcoelho/vastjson.git',
     branch='main'
 )
 ```
 
 In `BUILD.bazel`, add this dependency:
 ```
-deps = ["@BigJSON//src/bigjson:bigjson_lib"]
+deps = ["@BigJSON//src/vastjson:vastjson_lib"]
 ```
 
-Then, just `#include <bigjson/BigJSON.hpp>` in your C++ source files.
+Then, just `#include <vastjson/VastJSON.hpp>` in your C++ source files.
 
 ## License
 

@@ -1,5 +1,5 @@
-#ifndef BIG_JSON_HPP
-#define BIG_JSON_HPP
+#ifndef VAST_JSON_HPP
+#define VAST_JSON_HPP
 
 #include <sstream>
 #include <fstream>
@@ -9,10 +9,10 @@
 #include <nlohmann/json.hpp>
 //using json = nlohmann::json;
 
-namespace bigjson
+namespace vastjson
 {
 
-    class BigJSON
+    class VastJSON
     {
     public:
         // multiple json
@@ -81,13 +81,13 @@ namespace bigjson
             cache[key] = ssjson.str(); // keep string in cache
         }
 
-        BigJSON(std::string& str)
+        VastJSON(std::string& str)
         {
             std::istringstream is(str);
             process(is);
         }
 
-        BigJSON(std::istream &is)
+        VastJSON(std::istream &is)
         {
             process(is);
         }
@@ -149,11 +149,11 @@ namespace bigjson
             }
         }
 
-        ~BigJSON()
+        ~VastJSON()
         {
         }
     };
 
-} // namespace bigjson
+} // namespace vastjson
 
-#endif // BIG_JSON_HPP
+#endif // VAST_JSON_HPP
