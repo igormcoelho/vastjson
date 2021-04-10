@@ -1,7 +1,7 @@
 # vastjson
 VastJSON library in C++: structured json with top level cached items for giant JSON files - *using [nlohmann::json](https://www.github.com/nlohmann/json)*
 
-This project emerged from a practical need... see [nlohmann::json Issue 1516](https://github.com/nlohmann/json/issues/1516).
+This project emerged from a practical need... see [nlohmann::json Issue 1613](https://github.com/nlohmann/json/issues/1613#issuecomment-816945763).
 
 ## Why name it VastJSON?
 
