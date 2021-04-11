@@ -343,6 +343,19 @@ namespace vastjson
             return jj6;
         }
         //
+        void trim(std::istream& is, char& pk) {
+            if (!pk)
+                return; // EOF
+            // consume spaces and non-visible chars
+            while((pk == ' ') || (pk == '\t') || (pk == '\r') || (pk == '\n')) // TODO: more here?
+            {
+                is.get();
+                pk = is.peek();
+                if (!pk)
+                    return; // EOF
+            }
+            //
+        }
         // perform string caching until 'targetKey' is found (or stream is ended)
         void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
         {
@@ -360,17 +373,7 @@ namespace vastjson
             //
             
             char pk = is.peek();
-            if (!pk)
-                return; // EOF
-            // consume spaces and non-visible chars
-            while((pk == ' ') || (pk == '\t') || (pk == '\r') || (pk == '\n')) // TODO: more here?
-            {
-                is.get();
-                pk = is.peek();
-                if (!pk)
-                    return; // EOF
-            }
-            //
+            trim(is, pk);
             std::cout << "first char is: '" << pk << "'" << std::endl;
             
             // try to detect mode 2 (should not be '{' or continuation char ',')
@@ -453,13 +456,16 @@ namespace vastjson
                 
                 if (c == '\"')
                 {
-                    std::cout << "FOUND STRING!" << std::endl;
+                    std::cout << "X1 FOUND STRING (TRY GET IDENTIFIER)!" << std::endl;
                     // directly load chain of string (including \", '{' and '}')
                     std::string str = "\"";
                     // invoke getString method
                     getString(str, is);
                     //
-                    std::cout << "STRING IS: '" << str << "'" << std::endl;
+                    std::cout << "X1 STRING IS: '" << str << "'" << std::endl;
+                    // try to get identifier
+
+
                     // dump string and continue
                     for (unsigned i = 0; i < str.length(); i++)
                     {
