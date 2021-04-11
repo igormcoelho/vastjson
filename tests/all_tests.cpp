@@ -16,6 +16,7 @@ const std::string example = "{\"A\":{ },\"B\":{ \"B1\":10, \"B2\":\"abcd\" },\"Z
 
 TEST_CASE("example size == 3")
 {
+    std::cout << "" << std::endl;
     std::string local_example = example;
     VastJSON bigj(local_example);
     REQUIRE(bigj.size() == 3);
@@ -23,6 +24,7 @@ TEST_CASE("example size == 3")
 
 TEST_CASE("bigj[\"B\"][\"B2\"] == \"abcd\"")
 {
+    std::cout << "" << std::endl;
     std::string local_example = example;
     VastJSON bigj(local_example);
     REQUIRE(bigj["B"]["B2"] == "abcd");
@@ -30,6 +32,7 @@ TEST_CASE("bigj[\"B\"][\"B2\"] == \"abcd\"")
 
 TEST_CASE("bigj[\"B\"][\"B1\"] == 10")
 {
+    std::cout << "" << std::endl;
     std::string local_example = example;
     VastJSON bigj(local_example);
     REQUIRE(bigj["B"]["B1"] == 10);
@@ -37,6 +40,7 @@ TEST_CASE("bigj[\"B\"][\"B1\"] == 10")
 
 TEST_CASE("bigj isPending()")
 {
+    std::cout << "" << std::endl;
     // lazy processing
     VastJSON bigj1{new std::ifstream("testdata/test2.json")};
     REQUIRE(bigj1.isPending());
@@ -48,6 +52,7 @@ TEST_CASE("bigj isPending()")
 
 TEST_CASE("bigj partial consumption over ifstream")
 {
+    std::cout << "" << std::endl;
     std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
     VastJSON bigj{std::move(ifs)};
 
@@ -65,6 +70,7 @@ TEST_CASE("bigj partial consumption over ifstream")
 
 TEST_CASE("bigj getUntil")
 {
+    std::cout << "" << std::endl;
     std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
     VastJSON bigj{std::move(ifs)};
 
@@ -110,6 +116,30 @@ TEST_CASE("bigj test_quotes")
     // size is correct
     REQUIRE(bigj.size() == 3);
 }
+
+
+TEST_CASE("bigj test primitive")
+{
+    std::cout << "" << std::endl;
+    std::string s = "10";
+    VastJSON bigj{s};
+
+    // size is correct
+    REQUIRE(bigj.size() == 1);
+    // empty key means "self-value" or "root-value" or "primitive-value"
+    // TODO: should we use some "operator*" or "self-conversion operator"?
+    REQUIRE(bigj[""] == 10);
+
+    std::string s2 = "[1,2,3]";
+    VastJSON bigj2{s2};
+
+    // size is correct
+    REQUIRE(bigj2.size() == 1);
+    // empty key means "self-value" or "root-value" or "primitive-value"
+    // TODO: should we use some "operator*" or "self-conversion operator"?
+    REQUIRE(bigj2[""].size() == 3);
+}
+
 
 /*
 TEST_CASE("bigj test_common")

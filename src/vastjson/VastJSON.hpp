@@ -316,16 +316,75 @@ namespace vastjson
             }
         }
         //
+        nlohmann::json getJSONElement(std::istream& is) {
+            char last = '\0';
+            auto sptr = std::make_shared<CacheStream>(CacheStream(&is));
+            nlohmann::json jj6;
+            std::string again;
+            bool bad = false;
+            try {
+                jj6 = nlohmann::json::parse(sptr);
+            } 
+            catch(std::exception& e) {
+                again = sptr->cache;
+                last = again[again.length()-1];
+                again.pop_back();
+                bad = true;
+            }
+            //
+            if(bad) {
+                try {
+                    jj6 = nlohmann::json::parse(again);
+                } 
+                catch(std::exception& e) {
+                    //std::cout << "REALLY BAD READ! NO TRY AGAIN..." << std::endl;
+                }
+            }
+            return jj6;
+        }
+        //
         // perform string caching until 'targetKey' is found (or stream is ended)
         void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
         {
             std::string before;
             std::string content;
             //
-            int target_field = 1; // starts from 1
+            constexpr int target_field = 1; // starts from 1
             // if 'save' is false, 'presave' is true (always the opposite)
             bool save = false;
             //
+            // DETECT MODE
+            // MODE 1 - { or }
+            // MODE 2 - general (int, string, list)
+            // TODO: MODE 3 - [ ]... but not now!
+            //
+            
+            char pk = is.peek();
+            if (!pk)
+                return; // EOF
+            // consume spaces and non-visible chars
+            while((pk == ' ') || (pk == '\t') || (pk == '\r') || (pk == '\n')) // TODO: more here?
+            {
+                is.get();
+                pk = is.peek();
+                if (!pk)
+                    return; // EOF
+            }
+            //
+            std::cout << "first char is: '" << pk << "'" << std::endl;
+            
+            // try to detect mode 2 (should not be '{' or continuation char ',')
+            if((pk != '{') && (pk != ',')) { 
+                // must be a list or primary element
+                std::cout << "UNIQUE ELEMENT!" << std::endl;
+                nlohmann::json jout = getJSONElement(is);
+                jsons[""] = jout;
+                cache[""] = "";
+                return;
+            }
+            
+
+            // this is mode 1: first symbol must be '{'
             while (true)
             {
                 // =========
