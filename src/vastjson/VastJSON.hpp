@@ -284,14 +284,14 @@ namespace vastjson
 
         std::string getStringIdentifier(std::string& before) 
         {
-            std::cout << "getStringIdentifier('" << before << "')" << std::endl;
+            //std::cout << "getStringIdentifier('" << before << "')" << std::endl;
             unsigned keyStart = before.find('\"') + 1;
             std::string rest = before.substr(keyStart, before.length());
-            std::cout << "rest = '" << rest << "'" << std::endl;
+            //std::cout << "rest = '" << rest << "'" << std::endl;
             std::istringstream is(rest);
             std::string str = "\"";
             getString(str, is);
-            std::cout << "final string: '" << str << "'" << std::endl;
+            //std::cout << "final string: '" << str << "'" << std::endl;
             return str;
         }
 
@@ -341,7 +341,7 @@ namespace vastjson
                 }
             }
             //
-            std::cout << "LAST(PUTBACK) = '" << last << "'" << std::endl;
+            //std::cout << "LAST(PUTBACK) = '" << last << "'" << std::endl;
             is.putback(last);
             return jj6;
         }
@@ -365,10 +365,6 @@ namespace vastjson
             std::string before;
             std::string content;
             //
-            constexpr int target_field = 1; // starts from 1
-            // if 'save' is false, 'presave' is true (always the opposite)
-            bool save = false;
-            //
             // DETECT MODE
             // MODE 1 - { or }
             // MODE 2 - general (int, string, list)
@@ -377,102 +373,39 @@ namespace vastjson
             
             char pk = is.peek();
             trim(is, pk);
-            std::cout << "first char is: '" << pk << "'" << std::endl;
             
             // try to detect mode 2 (should not be '{' or continuation char ',')
             if((pk != '{') && (pk != ',')) { 
                 // must be a list or primary element
-                std::cout << "UNIQUE ELEMENT!" << std::endl;
                 nlohmann::json jout = getJSONElement(is);
                 jsons[""] = jout;
                 cache[""] = "";
                 return;
             }
-            
 
             // this is mode 1: first symbol must be '{'
             while (true)
             {
-                /*
-                // =========
-                // peek part
-                // =========
-                char p = is.peek();
-                if (!p)
-                    break; // EOF
-                // check if beggining a list
-                if (p == '[')
-                {
-                    std::cout << "FOUND LIST (I think this could also apply to string!!)" << std::endl;
-                    char last = '\0';
-                    auto sptr = std::make_shared<CacheStream>(CacheStream(&is));
-                    nlohmann::json jj6;
-                    std::string again;
-                    try {
-                        jj6 = nlohmann::json::parse(sptr);
-                    } 
-                    catch(std::exception& e) {
-                        //std::cout << "BAD READ! TRY AGAIN..." << std::endl;
-                        again = sptr->cache;
-                        last = again[again.length()-1];
-                        again.pop_back();
-                        //std::cout << "AGAIN='" << again << "'" << std::endl;
-                    }
-                    std::cout << "trying again!" << std::endl;
-                    try {
-                        jj6 = nlohmann::json::parse(again);
-                    } 
-                    catch(std::exception& e) {
-                        //std::cout << "REALLY BAD READ! NO TRY AGAIN..." << std::endl;
-                    }
-
-
-                    // dump data from jp
-                    std::cout << "FOUND jp = '" << jj6 << "'" << std::endl;
-                    std::cout << "last = '" << last << "'" << std::endl;
-                    // TODO: 'last' may be useful (if it's symbol '}', perhaps...)
-                    std::stringstream ss;
-                    ss << jj6;
-                    if (!save) {
-                        std::cout << "find identifier in before: '" << before << "'" << std::endl;
-                        std::string str_id = getStringIdentifier(before);
-                        std::cout << "std_id='" << str_id << "'" << std::endl;
-                        std::string field_name = str_id.substr(1, str_id.length()-2);
-                        if(field_name == "") {
-                            std::cerr << "STRANGE: EMPTY ID!" << std::endl;
-                            assert(false);
-                        }
-                        //before.append(ss.str());
-                        cache[field_name] = std::move(content);
-                        content = ""; // implicit??
-                        before = ""; // good?
-                        before += last; // SHOULD WE TREAT THIS WHEN '}' or '{', or.....???
-                    }
-                    if (save)
-                        content.append(ss.str());
-                }
-                */
-
                 // get part
                 char c;
                 if (!is.get(c))
                     break; // EOF
                 
                 // LOOK FOR IDENTIFIER
-                if (c == '\"')
-                {
-                    std::cout << "X1 FOUND STRING (TRY GET IDENTIFIER)!" << std::endl;
+                if (c != '\"') {
+                    //std::cerr << "WHAT TO DO? MAYBE TRIM? c='" << c << "'" << std::endl;
+                    // could also be first '{' here... or final '}'...
+                    trim(is, c);
+                }
+                else {
                     // directly load chain of string (including \", '{' and '}')
                     std::string str = "\"";
                     // invoke getString method
                     getString(str, is);
                     //
-                    std::cout << "X1 STRING IS: '" << str << "'" << std::endl;
-                    //
                     // try to get identifier
                     char pk = is.peek();
                     trim(is, pk);
-                    std::cout << "X1 next char is: '" << pk << "'" << std::endl;
                     if(pk != ':') {
                         std::cerr << "WRONG DELIMITER! ABORT!" << std::endl;
                         break;
@@ -480,14 +413,10 @@ namespace vastjson
                     is.get(); // consume ':'
                     pk = is.peek();
                     trim(is, pk);
-                    std::cout << "X1 next next char is: '" << pk << "'" << std::endl;
                     //
-
-                    std::cout << "TRY TO FIND COMPONENT" << std::endl;
                     nlohmann::json comp = getJSONElement(is);
 
                     std::string str_id = getStringIdentifier(str);
-                    std::cout << "std_id='" << str_id << "'" << std::endl;
                     std::string field_name = str_id.substr(1, str_id.length()-2);
                     if(field_name == "") {
                         std::cerr << "STRANGE: EMPTY ID!" << std::endl;
@@ -496,7 +425,6 @@ namespace vastjson
                     std::stringstream ss; 
                     ss << comp;
                     comp = nlohmann::json();
-                    std::cout << "ADDING '" << field_name << "'" << std::endl;
                     cache[field_name] = ss.str();
                     // TODO: delete 'ss' (AVOID LOSS OF MEMORY HERE)
                     content = ""; // implicit??
@@ -524,123 +452,10 @@ namespace vastjson
                     }
 
                     // =============
-                    continue;
-/*
-                    char last = '\0'; // ???????
-                        
-
-                    if (!save) {
-                        std::cout << "find identifier in before: '" << before << "'" << std::endl;
-                        std::string str_id = getStringIdentifier(before);
-                        std::cout << "std_id='" << str_id << "'" << std::endl;
-                        std::string field_name = str_id.substr(1, str_id.length()-2);
-                        if(field_name == "") {
-                            std::cerr << "STRANGE: EMPTY ID!" << std::endl;
-                            assert(false);
-                        }
-                        //before.append(ss.str());
-                        cache[field_name] = std::move(content);
-                        content = ""; // implicit??
-                        before = ""; // good?
-                        before += last; // SHOULD WE TREAT THIS WHEN '}' or '{', or.....???
-                    }
-                    if (save)
-                        content.append(ss.str());
-
-
-
-                    // dump string and continue
-                    for (unsigned i = 0; i < str.length(); i++)
-                    {
-                        if (!save)
-                            before += str[i];
-                        if (save)
-                            content += str[i];
-                    }
-                    continue;
-*/
+                    //continue;
                 }
-                std::cerr << "WHAT TO DO?" << std::endl;
-/*
-                if (!save)
-                    before += c;
-                if (save)
-                    content += c;
-                if (c == '{')
-                {
-                    count_par++;
-                    if ((count_par == target_field + 1) && !save) // 2?
-                    {
-                        content += c;
-                        save = true;
-                    }
-                }
-                if (c == '}')
-                {
-                    before.pop_back();                           // drop '{'
-                    if ((count_par == target_field + 1) && save) // 2?
-                    {
-
-                        std::cout << "X2 find identifier in before: '" << before << "'" << std::endl;
-                        std::string str_id = getStringIdentifier(before);
-                        std::cout << "X2  std_id='" << str_id << "'" << "(" << str_id.length() << ")" << std::endl;
-                        std::string field_name = str_id.substr(1, str_id.length()-2);
-                        if(field_name == "") {
-                            std::cerr << "X2  STRANGE: EMPTY ID!" << std::endl;
-                            assert(false);
-                        }
-                        // DO STORE!
-                        //cache[field_name] = std::move(content);
-                        //
-                        //std::cout << "RESTART = " << sbefore << std::endl;
-                        //
-                        // 1-get field name
-                        //
-                        //
-                        
-                        //unsigned keyStart = before.find('\"') + 1;
-                        //unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
-                        //std::string field_name = before.substr(keyStart, keySize);
-                        
-                        std::cout << "X2 BEFORE -> '" << before << "'" << std::endl;
-                        std::cout << "X2 FIELD -> '" << field_name << "'" << std::endl;
-                        std::cout << "X2 CONTENT -> '" << content << "'" << std::endl;
-                        
-                        before = "";
-                        //2-move string to cache
-                        cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!
-                        //
-                        //std::cout << "store = '" << field_name << "'" << std::endl;
-                        //
-                        //before = std::stringstream();
-                        //content = std::stringstream();
-                        content = "";
-                        //
-                        save = false;
-                        // if 'targetKey' is found, stop reading
-                        if ((targetKey != "") && (field_name == targetKey))
-                        {
-                            // perform count_par decrease and stop (for now)
-                            count_par--;
-                            break;
-                        }
-                        // check if count_keys is enabled (>= 0)
-                        if (count_keys >= 0)
-                        {
-                            // counting is enabled.. must decrease one key
-                            count_keys--;
-                            // check if count has been reached
-                            if (count_keys == 0)
-                            {
-                                // perform count_par decrease and stop (for now)
-                                count_par--;
-                                break;
-                            }
-                        }
-                    }
-                    count_par--;
-                }
-                */
+                //
+                //std::cerr << "WHAT TO DO?" << std::endl;
             }
         }
 
