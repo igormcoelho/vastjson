@@ -393,6 +393,7 @@ namespace vastjson
             // this is mode 1: first symbol must be '{'
             while (true)
             {
+                /*
                 // =========
                 // peek part
                 // =========
@@ -450,13 +451,14 @@ namespace vastjson
                     if (save)
                         content.append(ss.str());
                 }
+                */
 
                 // get part
                 char c;
                 if (!is.get(c))
                     break; // EOF
                 
-                
+                // LOOK FOR IDENTIFIER
                 if (c == '\"')
                 {
                     std::cout << "X1 FOUND STRING (TRY GET IDENTIFIER)!" << std::endl;
@@ -523,7 +525,7 @@ namespace vastjson
 
                     // =============
                     continue;
-
+/*
                     char last = '\0'; // ???????
                         
 
@@ -556,8 +558,10 @@ namespace vastjson
                             content += str[i];
                     }
                     continue;
+*/
                 }
-
+                std::cerr << "WHAT TO DO?" << std::endl;
+/*
                 if (!save)
                     before += c;
                 if (save)
@@ -593,11 +597,11 @@ namespace vastjson
                         // 1-get field name
                         //
                         //
-                        /*
-                        unsigned keyStart = before.find('\"') + 1;
-                        unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
-                        std::string field_name = before.substr(keyStart, keySize);
-                        */
+                        
+                        //unsigned keyStart = before.find('\"') + 1;
+                        //unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
+                        //std::string field_name = before.substr(keyStart, keySize);
+                        
                         std::cout << "X2 BEFORE -> '" << before << "'" << std::endl;
                         std::cout << "X2 FIELD -> '" << field_name << "'" << std::endl;
                         std::cout << "X2 CONTENT -> '" << content << "'" << std::endl;
@@ -636,6 +640,7 @@ namespace vastjson
                     }
                     count_par--;
                 }
+                */
             }
         }
 
