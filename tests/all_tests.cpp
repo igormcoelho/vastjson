@@ -52,7 +52,7 @@ TEST_CASE("bigj isPending()")
 
 TEST_CASE("bigj partial consumption over ifstream")
 {
-    std::cout << "" << std::endl;
+    std::cout << std::endl << " ======= partial consumption of ifstream ======= " << std::endl;
     std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
     VastJSON bigj{std::move(ifs)};
 
@@ -70,7 +70,7 @@ TEST_CASE("bigj partial consumption over ifstream")
 
 TEST_CASE("bigj getUntil")
 {
-    std::cout << "" << std::endl;
+    std::cout << std::endl << " ======= getUntil ======= " << std::endl;
     std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
     VastJSON bigj{std::move(ifs)};
 
@@ -141,7 +141,7 @@ TEST_CASE("bigj test primitive")
 }
 
 
-/*
+
 TEST_CASE("bigj test_common")
 {
     std::cout << "" << std::endl;
@@ -151,4 +151,3 @@ TEST_CASE("bigj test_common")
     // size is correct
     REQUIRE(bigj.size() == 3);
 }
-*/

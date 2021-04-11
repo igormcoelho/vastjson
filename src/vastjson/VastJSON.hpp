@@ -340,6 +340,9 @@ namespace vastjson
                     //std::cout << "REALLY BAD READ! NO TRY AGAIN..." << std::endl;
                 }
             }
+            //
+            std::cout << "LAST(PUTBACK) = '" << last << "'" << std::endl;
+            is.putback(last);
             return jj6;
         }
         //
@@ -463,7 +466,85 @@ namespace vastjson
                     getString(str, is);
                     //
                     std::cout << "X1 STRING IS: '" << str << "'" << std::endl;
+                    //
                     // try to get identifier
+                    char pk = is.peek();
+                    trim(is, pk);
+                    std::cout << "X1 next char is: '" << pk << "'" << std::endl;
+                    if(pk != ':') {
+                        std::cerr << "WRONG DELIMITER! ABORT!" << std::endl;
+                        break;
+                    }
+                    is.get(); // consume ':'
+                    pk = is.peek();
+                    trim(is, pk);
+                    std::cout << "X1 next next char is: '" << pk << "'" << std::endl;
+                    //
+
+                    std::cout << "TRY TO FIND COMPONENT" << std::endl;
+                    nlohmann::json comp = getJSONElement(is);
+
+                    std::string str_id = getStringIdentifier(str);
+                    std::cout << "std_id='" << str_id << "'" << std::endl;
+                    std::string field_name = str_id.substr(1, str_id.length()-2);
+                    if(field_name == "") {
+                        std::cerr << "STRANGE: EMPTY ID!" << std::endl;
+                        assert(false);
+                    }
+                    std::stringstream ss; 
+                    ss << comp;
+                    comp = nlohmann::json();
+                    std::cout << "ADDING '" << field_name << "'" << std::endl;
+                    cache[field_name] = ss.str();
+                    // TODO: delete 'ss' (AVOID LOSS OF MEMORY HERE)
+                    content = ""; // implicit??
+                    before = ""; // good?
+                    // =============
+                    // if 'targetKey' is found, stop reading
+                    if ((targetKey != "") && (field_name == targetKey))
+                    {
+                        // perform count_par decrease and stop (for now)
+                        //count_par--;
+                        break;
+                    }
+                    // check if count_keys is enabled (>= 0)
+                    if (count_keys >= 0)
+                    {
+                        // counting is enabled.. must decrease one key
+                        count_keys--;
+                        // check if count has been reached
+                        if (count_keys == 0)
+                        {
+                            // perform count_par decrease and stop (for now)
+                            //count_par--;
+                            break;
+                        }
+                    }
+
+                    // =============
+                    continue;
+
+                    char last = '\0'; // ???????
+                        
+
+                    if (!save) {
+                        std::cout << "find identifier in before: '" << before << "'" << std::endl;
+                        std::string str_id = getStringIdentifier(before);
+                        std::cout << "std_id='" << str_id << "'" << std::endl;
+                        std::string field_name = str_id.substr(1, str_id.length()-2);
+                        if(field_name == "") {
+                            std::cerr << "STRANGE: EMPTY ID!" << std::endl;
+                            assert(false);
+                        }
+                        //before.append(ss.str());
+                        cache[field_name] = std::move(content);
+                        content = ""; // implicit??
+                        before = ""; // good?
+                        before += last; // SHOULD WE TREAT THIS WHEN '}' or '{', or.....???
+                    }
+                    if (save)
+                        content.append(ss.str());
+
 
 
                     // dump string and continue
