@@ -89,3 +89,24 @@ TEST_CASE("bigj getUntil")
     // stream must not exist
     REQUIRE(!bigj.isPending());
 }
+
+TEST_CASE("bigj test_with_list")
+{
+    std::cout << "" << std::endl;
+    std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test_with_list.json")};
+    VastJSON bigj{std::move(ifs)};
+
+    // size is correct
+    REQUIRE(bigj.size() == 4);
+}
+
+/*
+TEST_CASE("bigj test_quotes")
+{
+    std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test_quotes.json")};
+    VastJSON bigj{std::move(ifs)};
+
+    // size is correct
+    REQUIRE(bigj.size() == 4);
+}
+*/

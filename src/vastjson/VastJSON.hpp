@@ -6,11 +6,86 @@
 #include <vector>
 #include <memory>
 //
+#include <iostream> // TODO REMOVE
+//
+#include <memory>
+
+namespace nlohmann
+{
+    namespace detail
+    {
+
+        template <class T>
+        class custom_stream_adapter
+        {
+        public:
+            using char_type = typename T::char_type;
+            std::shared_ptr<T> adapter;
+
+            ~custom_stream_adapter()
+            {
+                adapter = nullptr;
+            }
+
+            explicit custom_stream_adapter(std::shared_ptr<T> _adapter)
+                : adapter(_adapter)
+            {
+            }
+
+            // delete because of pointer members
+            custom_stream_adapter(const custom_stream_adapter &) = delete;
+            custom_stream_adapter &operator=(custom_stream_adapter &) = delete;
+            custom_stream_adapter &operator=(custom_stream_adapter &&) = delete;
+
+            custom_stream_adapter(custom_stream_adapter &&rhs) noexcept
+                : adapter(rhs.adapter)
+            {
+                rhs.adapter = nullptr;
+            }
+
+            // std::istream/std::streambuf use std::char_traits<char>::to_int_type, to
+            // ensure that std::char_traits<char>::eof() and the character 0xFF do not
+            // end up as the same value, eg. 0xFFFFFFFF.
+            std::char_traits<char>::int_type get_character()
+            {
+                return adapter->get_character();
+            }
+        };
+
+        template <class T>
+        inline custom_stream_adapter<T> input_adapter(std::shared_ptr<T> &stream_ptr)
+        {
+            return custom_stream_adapter<T>(stream_ptr);
+        }
+
+    } // namespace
+} // namespace
+
+//
 #include <nlohmann/json.hpp>
 //using json = nlohmann::json;
 
 namespace vastjson
 {
+    // stream that caches stuff read by nlohmann::json
+    struct CacheStream
+    {
+        using char_type = char;
+        std::istream *is;
+        std::string cache;
+
+        CacheStream(std::istream *_is) : is(_is)
+        {
+        }
+
+        std::char_traits<char>::int_type get_character()
+        {
+            int c = is->get();
+            cache += c;
+            return c;
+        }
+    };
+
     class VastJSON final
     {
     private:
@@ -197,7 +272,7 @@ namespace vastjson
         }
 
         // lazy processing: transfer ownership of _if to VastJSON
-        VastJSON(std::ifstream* _if) : ifsptr{_if}
+        VastJSON(std::ifstream *_if) : ifsptr{_if}
         {
         }
 
@@ -206,6 +281,40 @@ namespace vastjson
         }
 
     private:
+
+        std::string getStringIdentifier(std::string& before) 
+        {
+            std::cout << "getStringIdentifier('" << before << "')" << std::endl;
+            unsigned keyStart = before.find('\"') + 1;
+            std::string rest = before.substr(keyStart, before.length());
+            std::cout << "rest = '" << rest << "'" << std::endl;
+            std::istringstream is(rest);
+            std::string str = "\"";
+            getString(str, is);
+            std::cout << "final string: '" << str << "'" << std::endl;
+            return str;
+        }
+
+        void getString(std::string &str, std::istream &is)
+        {
+            char c;
+            while (is.get(c))
+            {
+                str += c;
+                if (c == '\"') // closing string
+                    break;
+                if (c == '\\')
+                {              // escape char, read next
+                    is.get(c); // TODO: check if error is possible here
+                    str += c;  // add directly
+                }
+            }
+            if ((str.length() < 2) || (str[0] != '\"') || (str[str.length() - 1] != '\"'))
+            {
+                std::cout << "WARNING: BAD STRING '" << str << "'" << std::endl; // TODO: remove
+                str = "\"\"";                                                    // forced empty string
+            }
+        }
         //
         // perform string caching until 'targetKey' is found (or stream is ended)
         void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
@@ -214,13 +323,92 @@ namespace vastjson
             std::string content;
             //
             int target_field = 1; // starts from 1
+            // if 'save' is false, 'presave' is true (always the opposite)
             bool save = false;
             //
             while (true)
             {
+                // =========
+                // peek part
+                // =========
+                char p = is.peek();
+                if (!p)
+                    break; // EOF
+                // check if beggining a list
+                if (p == '[')
+                {
+                    std::cout << "FOUND LIST (I think this could also apply to string!!)" << std::endl;
+                    char last = '\0';
+                    auto sptr = std::make_shared<CacheStream>(CacheStream(&is));
+                    nlohmann::json jj6;
+                    std::string again;
+                    try {
+                        jj6 = nlohmann::json::parse(sptr);
+                    } 
+                    catch(std::exception& e) {
+                        //std::cout << "BAD READ! TRY AGAIN..." << std::endl;
+                        again = sptr->cache;
+                        last = again[again.length()-1];
+                        again.pop_back();
+                        //std::cout << "AGAIN='" << again << "'" << std::endl;
+                    }
+                    std::cout << "trying again!" << std::endl;
+                    try {
+                        jj6 = nlohmann::json::parse(again);
+                    } 
+                    catch(std::exception& e) {
+                        //std::cout << "REALLY BAD READ! NO TRY AGAIN..." << std::endl;
+                    }
+
+
+                    // dump data from jp
+                    std::cout << "FOUND jp = '" << jj6 << "'" << std::endl;
+                    std::cout << "last = '" << last << "'" << std::endl;
+                    // TODO: 'last' may be useful (if it's symbol '}', perhaps...)
+                    std::stringstream ss;
+                    ss << jj6;
+                    if (!save) {
+                        std::cout << "find identifier in before: '" << before << "'" << std::endl;
+                        std::string str_id = getStringIdentifier(before);
+                        std::cout << "std_id='" << str_id << "'" << std::endl;
+                        std::string field_name = str_id.substr(1, str_id.length()-1);
+                        if(field_name == "") {
+                            std::cerr << "STRANGE: EMPTY ID!" << std::endl;
+                        }
+                        //before.append(ss.str());
+                        cache[field_name] = std::move(content);
+                        content = ""; // implicit??
+                        before = ""; // good?
+                        before += last; // SHOULD WE TREAT THIS WHEN '}' or '{', or.....???
+                    }
+                    if (save)
+                        content.append(ss.str());
+                }
+
+                // get part
                 char c;
                 if (!is.get(c))
                     break; // EOF
+                if (c == '\"')
+                {
+                    std::cout << "FOUND STRING!" << std::endl;
+                    // directly load chain of string (including \", '{' and '}')
+                    std::string str = "\"";
+                    // invoke getString method
+                    getString(str, is);
+                    //
+                    std::cout << "STRING IS: '" << str << "'" << std::endl;
+                    // dump string and continue
+                    for (unsigned i = 0; i < str.length(); i++)
+                    {
+                        if (!save)
+                            before += str[i];
+                        if (save)
+                            content += str[i];
+                    }
+                    continue;
+                }
+
                 if (!save)
                     before += c;
                 if (save)
@@ -236,6 +424,7 @@ namespace vastjson
                 }
                 if (c == '}')
                 {
+                    before.pop_back();                           // drop '{'
                     if ((count_par == target_field + 1) && save) // 2?
                     {
                         //
@@ -243,8 +432,12 @@ namespace vastjson
                         //
                         // 1-get field name
                         unsigned keyStart = before.find('\"') + 1;
+
                         unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
                         std::string field_name = before.substr(keyStart, keySize);
+                        std::cout << "BEFORE -> '" << before << "'" << std::endl;
+                        std::cout << "FIELD -> '" << field_name << "'" << std::endl;
+                        std::cout << "CONTENT -> '" << content << "'" << std::endl;
                         before = "";
                         //2-move string to cache
                         cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!

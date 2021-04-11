@@ -1,7 +1,9 @@
+#include <memory>
 
 #include <vastjson/VastJSON.hpp>
 
 #include <iostream>
+
 
 int main()
 {
@@ -48,6 +50,7 @@ int main()
     // iterate over top-level keys (cached only!)
     for (auto it = bigj3.begin(); it != bigj3.end(); it++)
         std::cout << it->first << std::endl;
+    
 
     return 0;
 }
