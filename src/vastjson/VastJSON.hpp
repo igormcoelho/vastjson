@@ -371,9 +371,10 @@ namespace vastjson
                         std::cout << "find identifier in before: '" << before << "'" << std::endl;
                         std::string str_id = getStringIdentifier(before);
                         std::cout << "std_id='" << str_id << "'" << std::endl;
-                        std::string field_name = str_id.substr(1, str_id.length()-1);
+                        std::string field_name = str_id.substr(1, str_id.length()-2);
                         if(field_name == "") {
                             std::cerr << "STRANGE: EMPTY ID!" << std::endl;
+                            assert(false);
                         }
                         //before.append(ss.str());
                         cache[field_name] = std::move(content);
@@ -389,6 +390,8 @@ namespace vastjson
                 char c;
                 if (!is.get(c))
                     break; // EOF
+                
+                
                 if (c == '\"')
                 {
                     std::cout << "FOUND STRING!" << std::endl;
@@ -427,17 +430,32 @@ namespace vastjson
                     before.pop_back();                           // drop '{'
                     if ((count_par == target_field + 1) && save) // 2?
                     {
+
+                        std::cout << "X2 find identifier in before: '" << before << "'" << std::endl;
+                        std::string str_id = getStringIdentifier(before);
+                        std::cout << "X2  std_id='" << str_id << "'" << "(" << str_id.length() << ")" << std::endl;
+                        std::string field_name = str_id.substr(1, str_id.length()-2);
+                        if(field_name == "") {
+                            std::cerr << "X2  STRANGE: EMPTY ID!" << std::endl;
+                            assert(false);
+                        }
+                        // DO STORE!
+                        //cache[field_name] = std::move(content);
                         //
                         //std::cout << "RESTART = " << sbefore << std::endl;
                         //
                         // 1-get field name
+                        //
+                        //
+                        /*
                         unsigned keyStart = before.find('\"') + 1;
-
                         unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
                         std::string field_name = before.substr(keyStart, keySize);
-                        std::cout << "BEFORE -> '" << before << "'" << std::endl;
-                        std::cout << "FIELD -> '" << field_name << "'" << std::endl;
-                        std::cout << "CONTENT -> '" << content << "'" << std::endl;
+                        */
+                        std::cout << "X2 BEFORE -> '" << before << "'" << std::endl;
+                        std::cout << "X2 FIELD -> '" << field_name << "'" << std::endl;
+                        std::cout << "X2 CONTENT -> '" << content << "'" << std::endl;
+                        
                         before = "";
                         //2-move string to cache
                         cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!

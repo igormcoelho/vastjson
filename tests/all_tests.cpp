@@ -100,13 +100,25 @@ TEST_CASE("bigj test_with_list")
     REQUIRE(bigj.size() == 4);
 }
 
-/*
+
 TEST_CASE("bigj test_quotes")
 {
+    std::cout << "" << std::endl;
     std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test_quotes.json")};
     VastJSON bigj{std::move(ifs)};
 
     // size is correct
-    REQUIRE(bigj.size() == 4);
+    REQUIRE(bigj.size() == 3);
+}
+
+/*
+TEST_CASE("bigj test_common")
+{
+    std::cout << "" << std::endl;
+    std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test_common.json")};
+    VastJSON bigj{std::move(ifs)};
+
+    // size is correct
+    REQUIRE(bigj.size() == 3);
 }
 */
