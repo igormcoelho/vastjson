@@ -151,3 +151,34 @@ TEST_CASE("bigj test_common")
     // size is correct
     REQUIRE(bigj.size() == 3);
 }
+
+
+
+TEST_CASE("bigj test local")
+{
+    std::cout << "" << std::endl;
+
+    std::string  tst = "{\"A\":1, \"B\":true}";
+    VastJSON bigj0{tst};
+
+    // size is correct
+    REQUIRE(bigj0.size() == 2);
+
+
+    tst = "{\"A\":1,\"B\":true,\"C\":[1,2,3],\"D\":{\"D1\":10}, \"E\":-1}";
+    VastJSON bigj{tst};
+
+    // size is correct
+    REQUIRE(bigj.size() == 5);
+
+
+    tst = "{\"A\":1,\"B\":true,\"C\":[1,2,3],\"D\":{\"D1\":10}, \"E\":-1}";
+    VastJSON bigj2{tst};
+
+    // size is correct
+    REQUIRE(bigj2.size() == 5);
+
+
+
+
+}

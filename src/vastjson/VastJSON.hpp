@@ -346,13 +346,18 @@ namespace vastjson
             return jj6;
         }
         //
-        void trim(std::istream& is, char& pk) {
+        //void trim(std::istream& is, char& pk) {
+            void trim(std::istream& is) {
+                char pk = is.peek();
+            //std::cout << "trim(pk='" << pk << "')" << std::endl;
             if (!pk)
                 return; // EOF
             // consume spaces and non-visible chars
             while((pk == ' ') || (pk == '\t') || (pk == '\r') || (pk == '\n')) // TODO: more here?
             {
-                is.get();
+                int gc = is.get();
+                //std::cout << "gc='" << gc<< "' pk='" << pk << "'" << std::endl;
+                //assert(gc == pk); // OBVIOUS TRUTH!
                 pk = is.peek();
                 if (!pk)
                     return; // EOF
@@ -372,7 +377,9 @@ namespace vastjson
             //
             
             char pk = is.peek();
-            trim(is, pk);
+            //trim(is, pk);
+            trim(is);
+            pk = is.peek();
             
             // try to detect mode 2 (should not be '{' or continuation char ',')
             if((pk != '{') && (pk != ',')) { 
@@ -395,7 +402,11 @@ namespace vastjson
                 if (c != '\"') {
                     //std::cerr << "WHAT TO DO? MAYBE TRIM? c='" << c << "'" << std::endl;
                     // could also be first '{' here... or final '}'...
-                    trim(is, c);
+                    //
+                    //std::cout << "must treat c='" << c << "'" << std::endl;
+                    // TODO: this may be useful for specific targetting of "huge object" or "huge list" modes...
+                    //
+                    trim(is);
                 }
                 else {
                     // directly load chain of string (including \", '{' and '}')
@@ -405,14 +416,18 @@ namespace vastjson
                     //
                     // try to get identifier
                     char pk = is.peek();
-                    trim(is, pk);
+                    //trim(is, pk);
+                    trim(is);
+                    pk = is.peek();
                     if(pk != ':') {
                         std::cerr << "WRONG DELIMITER! ABORT!" << std::endl;
                         break;
                     }
                     is.get(); // consume ':'
                     pk = is.peek();
-                    trim(is, pk);
+                    //trim(is, pk);
+                    trim(is);
+                    pk = is.peek();
                     //
                     nlohmann::json comp = getJSONElement(is);
 

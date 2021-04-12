@@ -7,6 +7,11 @@ This project emerged from a practical need... see [nlohmann::json Issue 1613](ht
 
 Names like Big, Large, Huge, were already taken... so we found something BIGGER, LARGER... and FAST! So it's VastJSON :)
 
+## Two Modes (???)
+
+- vast object `{ ... }`
+- vast list (TODO) `[ ... ]`
+
 ## Run tests and use
 
 ```
