@@ -86,9 +86,21 @@ namespace vastjson
         }
     };
 
+    enum ModeVastJSON
+    {
+        // strategy for big dictionaries/objects on root level
+        BIG_ROOT_DICT_GENERIC,
+        // strategy for big dictionaries/objects on root level (do not allow lists as top-level entries)
+        BIG_ROOT_DICT_NO_ROOT_LIST,
+        // BIG_ROOT_LIST (TODO),
+        // BIG_TARGET_ELEMENT (TODO),
+        // NOT_BIG (TODO)
+    };
+
     class VastJSON final
     {
     private:
+        ModeVastJSON mode;
         // multiple json
         std::map<std::string, nlohmann::json> jsons;
         // read string cache
@@ -100,6 +112,11 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
+        ModeVastJSON getMode()
+        {
+            return mode;
+        }
+
         const auto begin() const
         {
             return cache.begin();
@@ -247,7 +264,7 @@ namespace vastjson
         // ======================
 
         // string will be immediately processed (for top-level items)
-        VastJSON(std::string &str)
+        VastJSON(std::string &str, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC) : mode{_mode}
         {
             std::istringstream is(str);
             int count_par = 0; // reading from level 0
@@ -255,24 +272,27 @@ namespace vastjson
         }
 
         // istream will be immediately processed (for top-level items)
-        VastJSON(std::istream &is)
+        VastJSON(std::istream &is, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC) : mode{_mode}
         {
             int count_par = 0; // reading from level 0
             cacheUntil(is, count_par);
         }
 
         // lazy processing
-        VastJSON(std::unique_ptr<std::ifstream> &&_ifsptr) : ifsptr{std::move(_ifsptr)}
+        VastJSON(std::unique_ptr<std::ifstream> &&_ifsptr, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+            : mode{_mode}, ifsptr{std::move(_ifsptr)}
         {
         }
 
         // lazy processing
-        VastJSON(std::ifstream &&_if) : ifsptr{new std::ifstream{std::move(_if)}}
+        VastJSON(std::ifstream &&_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+            : mode{_mode}, ifsptr{new std::ifstream{std::move(_if)}}
         {
         }
 
         // lazy processing: transfer ownership of _if to VastJSON
-        VastJSON(std::ifstream *_if) : ifsptr{_if}
+        VastJSON(std::ifstream *_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+            : mode{_mode}, ifsptr{_if}
         {
         }
 
@@ -281,8 +301,7 @@ namespace vastjson
         }
 
     private:
-
-        std::string getStringIdentifier(std::string& before) 
+        std::string getStringIdentifier(std::string &before)
         {
             //std::cout << "getStringIdentifier('" << before << "')" << std::endl;
             unsigned keyStart = before.find('\"') + 1;
@@ -316,27 +335,33 @@ namespace vastjson
             }
         }
         //
-        nlohmann::json getJSONElement(std::istream& is) {
+        nlohmann::json getJSONElement(std::istream &is)
+        {
             char last = '\0';
             auto sptr = std::make_shared<CacheStream>(CacheStream(&is));
             nlohmann::json jj6;
             std::string again;
             bool bad = false;
-            try {
+            try
+            {
                 jj6 = nlohmann::json::parse(sptr);
-            } 
-            catch(std::exception& e) {
+            }
+            catch (std::exception &e)
+            {
                 again = sptr->cache;
-                last = again[again.length()-1];
+                last = again[again.length() - 1];
                 again.pop_back();
                 bad = true;
             }
             //
-            if(bad) {
-                try {
+            if (bad)
+            {
+                try
+                {
                     jj6 = nlohmann::json::parse(again);
-                } 
-                catch(std::exception& e) {
+                }
+                catch (std::exception &e)
+                {
                     //std::cout << "REALLY BAD READ! NO TRY AGAIN..." << std::endl;
                 }
             }
@@ -347,13 +372,14 @@ namespace vastjson
         }
         //
         //void trim(std::istream& is, char& pk) {
-            void trim(std::istream& is) {
-                char pk = is.peek();
+        void trim(std::istream &is)
+        {
+            char pk = is.peek();
             //std::cout << "trim(pk='" << pk << "')" << std::endl;
             if (!pk)
                 return; // EOF
             // consume spaces and non-visible chars
-            while((pk == ' ') || (pk == '\t') || (pk == '\r') || (pk == '\n')) // TODO: more here?
+            while ((pk == ' ') || (pk == '\t') || (pk == '\r') || (pk == '\n')) // TODO: more here?
             {
                 int gc = is.get();
                 //std::cout << "gc='" << gc<< "' pk='" << pk << "'" << std::endl;
@@ -364,8 +390,18 @@ namespace vastjson
             }
             //
         }
+
         // perform string caching until 'targetKey' is found (or stream is ended)
         void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
+        {
+            if (mode == ModeVastJSON::BIG_ROOT_DICT_NO_ROOT_LIST)
+                cacheUntilNoRootList(is, count_par, targetKey, count_keys);
+            else // ModeVastJSON::BIG_ROOT_DICT_GENERIC
+                cacheUntilGeneric(is, count_par, targetKey, count_keys);
+        }
+
+        // IMPLEMENTATION THAT ALLOWS GENERIC JSON (SLOWER...)
+        void cacheUntilGeneric(std::istream &is, int &count_par, std::string targetKey, int count_keys)
         {
             std::string before;
             std::string content;
@@ -375,14 +411,15 @@ namespace vastjson
             // MODE 2 - general (int, string, list)
             // TODO: MODE 3 - [ ]... but not now!
             //
-            
+
             char pk = is.peek();
             //trim(is, pk);
             trim(is);
             pk = is.peek();
-            
+
             // try to detect mode 2 (should not be '{' or continuation char ',')
-            if((pk != '{') && (pk != ',')) { 
+            if ((pk != '{') && (pk != ','))
+            {
                 // must be a list or primary element
                 nlohmann::json jout = getJSONElement(is);
                 jsons[""] = jout;
@@ -397,9 +434,10 @@ namespace vastjson
                 char c;
                 if (!is.get(c))
                     break; // EOF
-                
+
                 // LOOK FOR IDENTIFIER
-                if (c != '\"') {
+                if (c != '\"')
+                {
                     //std::cerr << "WHAT TO DO? MAYBE TRIM? c='" << c << "'" << std::endl;
                     // could also be first '{' here... or final '}'...
                     //
@@ -408,7 +446,8 @@ namespace vastjson
                     //
                     trim(is);
                 }
-                else {
+                else
+                {
                     // directly load chain of string (including \", '{' and '}')
                     std::string str = "\"";
                     // invoke getString method
@@ -419,7 +458,8 @@ namespace vastjson
                     //trim(is, pk);
                     trim(is);
                     pk = is.peek();
-                    if(pk != ':') {
+                    if (pk != ':')
+                    {
                         std::cerr << "WRONG DELIMITER! ABORT!" << std::endl;
                         break;
                     }
@@ -432,18 +472,19 @@ namespace vastjson
                     nlohmann::json comp = getJSONElement(is);
 
                     std::string str_id = getStringIdentifier(str);
-                    std::string field_name = str_id.substr(1, str_id.length()-2);
-                    if(field_name == "") {
+                    std::string field_name = str_id.substr(1, str_id.length() - 2);
+                    if (field_name == "")
+                    {
                         std::cerr << "STRANGE: EMPTY ID!" << std::endl;
                         assert(false);
                     }
-                    std::stringstream ss; 
+                    std::stringstream ss;
                     ss << comp;
                     comp = nlohmann::json();
                     cache[field_name] = ss.str();
                     // TODO: delete 'ss' (AVOID LOSS OF MEMORY HERE)
                     content = ""; // implicit??
-                    before = ""; // good?
+                    before = "";  // good?
                     // =============
                     // if 'targetKey' is found, stop reading
                     if ((targetKey != "") && (field_name == targetKey))
@@ -471,6 +512,81 @@ namespace vastjson
                 }
                 //
                 //std::cerr << "WHAT TO DO?" << std::endl;
+            }
+        }
+
+        // LEGACY IMPLEMENTATION THAT WON'T ALLOW LISTS ON ROOT LEVEL... (FASTER!)
+        void cacheUntilNoRootList(std::istream &is, int &count_par, std::string targetKey, int count_keys)
+        {
+            std::string before;
+            std::string content;
+            //
+            int target_field = 1; // starts from 1
+            bool save = false;
+            //
+            while (true)
+            {
+                char c;
+                if (!is.get(c))
+                    break; // EOF
+                if (!save)
+                    before += c;
+                if (save)
+                    content += c;
+                if (c == '{')
+                {
+                    count_par++;
+                    if ((count_par == target_field + 1) && !save) // 2?
+                    {
+                        content += c;
+                        save = true;
+                    }
+                }
+                if (c == '}')
+                {
+                    if ((count_par == target_field + 1) && save) // 2?
+                    {
+                        //
+                        //std::cout << "RESTART = " << sbefore << std::endl;
+                        //
+                        // 1-get field name
+                        unsigned keyStart = before.find('\"') + 1;
+                        unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
+                        std::string field_name = before.substr(keyStart, keySize);
+                        before = "";
+                        //2-move string to cache
+                        cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!
+                        //
+                        //std::cout << "store = '" << field_name << "'" << std::endl;
+                        //
+                        //before = std::stringstream();
+                        //content = std::stringstream();
+                        content = "";
+                        //
+                        save = false;
+                        // if 'targetKey' is found, stop reading
+                        if ((targetKey != "") && (field_name == targetKey))
+                        {
+                            // perform count_par decrease and stop (for now)
+                            count_par--;
+                            break;
+                        }
+                        // check if count_keys is enabled (>= 0)
+                        if (count_keys >= 0)
+                        {
+                            // counting is enabled.. must decrease one key
+                            count_keys--;
+                            // check if count has been reached
+                            if (count_keys == 0)
+                            {
+                                // perform count_par decrease and stop (for now)
+                                count_par--;
+                                break;
+                            }
+                        }
+                    }
+                    count_par--;
+                }
             }
         }
 

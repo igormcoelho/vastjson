@@ -7,10 +7,14 @@ This project emerged from a practical need... see [nlohmann::json Issue 1613](ht
 
 Names like Big, Large, Huge, were already taken... so we found something BIGGER, LARGER... and FAST! So it's VastJSON :)
 
-## Two Modes (???)
+## Ideas and Roadmap
 
-- vast object `{ ... }`
-- vast list (TODO) `[ ... ]`
+Right now, this works fine for large json objects/dictionaries, a mode called `vast objects`.
+The way it is now, we could also easily support `vast lists` (a single list with thousands of elements), where indexing is partially done.
+And maybe with more efforts, allow these modes to cooperate into some hybrid strategy, where user "points out" where are the
+big parts of json, e.g., "B" -> "B1" is big list; "C" is big object; or "root" is big object (current mode); etc. 
+This would be nice for general purpose, but not trivial to implement now.
+
 
 ## Run tests and use
 
