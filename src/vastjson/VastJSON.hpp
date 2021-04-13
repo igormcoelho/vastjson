@@ -112,6 +112,9 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
+        // storing error flag here
+        bool hasError = false;
+        //
         ModeVastJSON getMode()
         {
             return mode;
@@ -481,6 +484,7 @@ namespace vastjson
                     std::stringstream ss;
                     ss << comp;
                     comp = nlohmann::json();
+                    //std::cout << "field_name: " << field_name << std::endl;
                     cache[field_name] = ss.str();
                     // TODO: delete 'ss' (AVOID LOSS OF MEMORY HERE)
                     content = ""; // implicit??
@@ -550,12 +554,29 @@ namespace vastjson
                         //std::cout << "RESTART = " << sbefore << std::endl;
                         //
                         // 1-get field name
-                        unsigned keyStart = before.find('\"') + 1;
-                        unsigned keySize = before.find('\"', keyStart + 1) - keyStart;
-                        std::string field_name = before.substr(keyStart, keySize);
-                        before = "";
-                        //2-move string to cache
-                        cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!
+                        int keyStart = before.find('\"') + 1;
+                        //std::string check_before1 = before.substr(0, keyStart);
+                        //std::cout << "check_before1 = '" << check_before1 << "'" << std::endl;
+                        int keyEnd = before.find('\"', keyStart + 1);
+                        //std::string check_before2 = before.substr(keyEnd, before.length()-keyEnd);
+                        //std::cout << "check_before2 = '" << check_before2 << "'" << std::endl;
+                        //std::cout << "keyEnd = " << keyEnd << " keyStart = " << keyStart << std::endl;
+                        std::string field_name = "";
+                        if (keyEnd < 0)
+                        {
+                            std::cerr << "WARNING: VastJSON failed to get field (mode: BIG_ROOT_DICT_NO_ROOT_LIST)" << std::endl;
+                            this->hasError = true;
+                            before = ""; // manual remove
+                        }
+                        else
+                        {
+                            int keySize = keyEnd - keyStart;
+                            field_name = before.substr(keyStart, keySize);
+                            before = "";
+                            //2-move string to cache
+                            std::cout << "x1 field_name: " << field_name << " content->" << content << std::endl;
+                            cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!
+                        }
                         //
                         //std::cout << "store = '" << field_name << "'" << std::endl;
                         //

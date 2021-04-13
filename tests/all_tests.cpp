@@ -178,22 +178,25 @@ TEST_CASE("bigj test local")
     // size is correct
     REQUIRE(bigj2.size() == 5);
 
+    // -------- BIG_ROOT_DICT_GENERIC --------
     std::string test_base = "{\"A\":{},\"B\":{},\"C\":[{\"C1\": {}}, {\"C2\": {}}],\"D\":{\"D1\":{}}, \"E\":{}}";
-    tst = test_base;
-    VastJSON bigj3{tst, BIG_ROOT_DICT_NO_ROOT_LIST};
-
-    // size is INcorrect (SHOULD BE 5!!)
-    REQUIRE(bigj3.size() == 3);
-    // mode should not allow lists on top (TODO: maybe flag some error() internal field in this situation?)
-    REQUIRE(bigj3.getMode() == BIG_ROOT_DICT_NO_ROOT_LIST);
-
     tst = test_base;
     VastJSON bigj4{tst, BIG_ROOT_DICT_GENERIC};
 
-    for (auto it = bigj4.begin(); it != bigj4.end(); it++)
-        std::cout << "bigj4:" << it->first << std::endl;
     // size is Correct
     REQUIRE(bigj4.size() == 5);
     // mode should not allow lists on top (TODO: maybe flag some error() internal field in this situation?)
     REQUIRE(bigj4.getMode() == BIG_ROOT_DICT_GENERIC);
+
+    // -------- BIG_ROOT_DICT_NO_ROOT_LIST --------
+    std::cout << " " << std::endl;
+    tst = test_base;
+    VastJSON bigj3{tst, BIG_ROOT_DICT_NO_ROOT_LIST};
+
+    // error flag should be triggered
+    REQUIRE(bigj3.hasError);
+    // size is correct (SOMEHOW...)
+    REQUIRE(bigj3.size() == 5);
+    // mode should not allow lists on top (TODO: maybe flag some error() internal field in this situation?)
+    REQUIRE(bigj3.getMode() == BIG_ROOT_DICT_NO_ROOT_LIST);
 }

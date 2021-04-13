@@ -15,6 +15,12 @@ And maybe with more efforts, allow these modes to cooperate into some hybrid str
 big parts of json, e.g., "B" -> "B1" is big list; "C" is big object; or "root" is big object (current mode); etc. 
 This would be nice for general purpose, but not trivial to implement now.
 
+Currently, these modes are supported:
+
+- `BIG_ROOT_DICT_NO_ROOT_LIST`: json consists of a huge dictionary/object, without any list as top-level element (and some other possible small bugs... see flag `.hasError` and warnings)
+- `BIG_ROOT_DICT_GENERIC`: json consists of a huge dictionary/object (no constraints regarding format or top-level fields)
+
+The more constrained mode should be the fastest (currently `BIG_ROOT_DICT_NO_ROOT_LIST`).
 
 ## Run tests and use
 
