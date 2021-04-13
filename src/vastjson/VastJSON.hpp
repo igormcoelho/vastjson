@@ -574,7 +574,7 @@ namespace vastjson
                             field_name = before.substr(keyStart, keySize);
                             before = "";
                             //2-move string to cache
-                            std::cout << "x1 field_name: " << field_name << " content->" << content << std::endl;
+                            //std::cout << "x1 field_name: " << field_name << " content->" << content << std::endl;
                             cache[field_name] = std::move(content); // <------ IT'S FUNDAMENTAL TO std::move() HERE!
                         }
                         //
