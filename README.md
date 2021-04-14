@@ -92,9 +92,25 @@ Currently, it uses the [nice json library from nlohmann](https://github.com/nloh
 
 ## Known Issues
 
-Right now, this is already used on practice for very large databases!
+Right now, this is already used successfully for very large databases! 
 
-Anyway, there's a terrible drawback: no internal string can contain "{" or "}". This is easy to fix, but not fixed yet. 
+### Include order issue
+
+This library must be included before `#include <nlohmann/json.hpp>`, since it pre-defines some parsing operations
+[see explanation here](https://github.com/nlohmann/json/discussions/2322).
+
+
+### Warnings and errors over different strategies
+
+Now multiple strategies are supported, some are faster and more risky, such as `BIG_ROOT_DICT_NO_ROOT_LIST`, and some are safer, such as `BIG_ROOT_DICT_GENERIC`.
+
+For example, the fast approach of `BIG_ROOT_DICT_NO_ROOT_LIST` allows parsing errors to occur, so it will inform user
+with a warning message and flag `.hasError = true`. This is the correct/expected behavior, not a bug.
+If some parsing error occurs "silently" (without triggering warnings), this may be considered a bug, so feel free to file an Issue here.
+
+Note that this library is not meant for strict validation the integrity of large json files (which we assume to be correct), this is focused only on fast and safe processing of big json files.
+Adding more tests to `tests/` folder is certainly a nice approach to increasing project safety.
+
 
 ## Usage
 
@@ -114,13 +130,13 @@ Consider JSON:
 And file `main.cpp` (see `demo/` folder):
 
 ```{.cpp}
-    #include <vastjson/VastJSON.hpp>
-    #include <iostream>
-    // ...
+#include <vastjson/VastJSON.hpp>
+#include <iostream>
+// ...
 
 int main() {
     std::ifstream if_test2("demo/test2.json");
-    vastjson::VastJSON bigj2(if_test2);
+    vastjson::VastJSON bigj2(if_test2); // standard BIG_ROOT_DICT_GENERIC
     std::cout << "LOADED #KEYS = " << bigj2.size() << std::endl; // 3
     std::cout << bigj2["A"] << std::endl;
     std::cout << bigj2["B"]["B2"] << std::endl;
@@ -147,36 +163,37 @@ If stream file ownership is given to VastJSON, it will only consume necessary pa
 
 
 ```
-        vastjson::VastJSON bigj3(new std::ifstream("demo/test3.json"));
-    // pending operations
-    std::cout << "isPending(): " << bigj3.isPending() << std::endl;
-    // cache size
-    std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;
-    std::cout << "getUntil(\"\",1) first key is found" << std::endl;
-    // get first keys
-    bigj3.getUntil("", 1);
-    // iterate over top-level keys (cached only!)
-    for (auto it = bigj3.begin(); it != bigj3.end(); it++)
-        std::cout << it->first << std::endl;
-    // direct access will load more
-    std::cout << "direct access to bigj3[\"B\"][\"B1\"] = " << bigj3["B"]["B1"] << std::endl;
-    // cache size
-    std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;    
-    // still pending
-    std::cout << "isPending(): " << bigj3.isPending() << std::endl;
-    // iterate over top-level keys (cached only!)
-    for (auto it = bigj3.begin(); it != bigj3.end(); it++)
-        std::cout << it->first << std::endl;
+// using non-standard strategy BIG_ROOT_DICT_NO_ROOT_LIST
+vastjson::VastJSON bigj3(new std::ifstream("demo/test3.json"), BIG_ROOT_DICT_NO_ROOT_LIST);
+// pending operations
+std::cout << "isPending(): " << bigj3.isPending() << std::endl;
+// cache size
+std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;
+std::cout << "getUntil(\"\",1) first key is found" << std::endl;
+// get first keys
+bigj3.getUntil("", 1);
+// iterate over top-level keys (cached only!)
+for (auto it = bigj3.begin(); it != bigj3.end(); it++)
+    std::cout << it->first << std::endl;
+// direct access will load more
+std::cout << "direct access to bigj3[\"B\"][\"B1\"] = " << bigj3["B"]["B1"] << std::endl;
+// cache size
+std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;    
+// still pending
+std::cout << "isPending(): " << bigj3.isPending() << std::endl;
+// iterate over top-level keys (cached only!)
+for (auto it = bigj3.begin(); it != bigj3.end(); it++)
+    std::cout << it->first << std::endl;
 
-    // real size (will force performing top-level indexing)
-    std::cout << "compute size will force top-level indexing...\nsize(): " << bigj3.size() << std::endl;
-    // cache size
-    std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;    
-    // not pending anymore
-    std::cout << "isPending(): " << bigj3.isPending() << std::endl;
-    // iterate over top-level keys (cached only!)
-    for (auto it = bigj3.begin(); it != bigj3.end(); it++)
-        std::cout << it->first << std::endl;
+// real size (will force performing top-level indexing)
+std::cout << "compute size will force top-level indexing...\nsize(): " << bigj3.size() << std::endl;
+// cache size
+std::cout << "cacheSize(): " << bigj3.cacheSize() << std::endl;    
+// not pending anymore
+std::cout << "isPending(): " << bigj3.isPending() << std::endl;
+// iterate over top-level keys (cached only!)
+for (auto it = bigj3.begin(); it != bigj3.end(); it++)
+    std::cout << it->first << std::endl;
 ```
 
 Output:
