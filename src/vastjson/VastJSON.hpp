@@ -1,3 +1,9 @@
+// This code is part of VastJSON library: parsers for giant json files 
+// It makes heavy usage of <nlohmann/json.hpp> library (also MIT licensed)
+// Project website: https://github.com/igormcoelho/vastjson
+// author: Igor Machado Coelho
+// Copyleft 2021 - MIT License
+
 #ifndef VAST_JSON_HPP
 #define VAST_JSON_HPP
 
