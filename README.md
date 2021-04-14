@@ -99,6 +99,11 @@ Right now, this is already used successfully for very large databases!
 This library must be included before `#include <nlohmann/json.hpp>`, since it pre-defines some parsing operations
 [see explanation here](https://github.com/nlohmann/json/discussions/2322).
 
+### Exceptions enabled for `BIG_ROOT_DICT_GENERIC`
+
+The mode `BIG_ROOT_DICT_GENERIC` depends on exceptions ([because of this issue with nlohmann::json](https://github.com/nlohmann/json/discussions/2322)), while `BIG_ROOT_DICT_NO_ROOT_LIST` does not. 
+It seems to be possible to [fix this with custom sax parsers](https://github.com/nlohmann/json/issues/1613#issuecomment-817442584), but it's not done yet.
+
 
 ### Warnings and errors over different strategies
 
