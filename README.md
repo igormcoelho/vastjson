@@ -251,7 +251,7 @@ git_repository(
 
 In `BUILD.bazel`, add this dependency:
 ```
-deps = ["@BigJSON//src/vastjson:vastjson_lib"]
+deps = ["@VastJSON//src/vastjson:vastjson_lib"]
 ```
 
 Then, just `#include <vastjson/VastJSON.hpp>` in your C++ source files.
