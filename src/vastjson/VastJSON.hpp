@@ -7,6 +7,10 @@
 #ifndef VAST_JSON_HPP
 #define VAST_JSON_HPP
 
+#ifdef INCLUDE_NLOHMANN_JSON_HPP_
+#error VastJSON must be included before nlohmann::json. See https://github.com/igormcoelho/vastjson/issues/4
+#endif
+
 #include <sstream>
 #include <fstream>
 #include <vector>
