@@ -57,16 +57,22 @@ vastjson_lib.vastjson_cache_size.restype = ctypes.c_int
 class VastJSON(object):
     def __init__(self, param : str, mode: int = -1) -> T:
         #print("INIT")
+        strsize = len(param)
+        strdata = (ctypes.c_char * strsize).from_buffer(bytearray(param, 'ascii'))
+
         #if type(param) is str:
         if mode == -1:
-            # direct string
-            strsize = len(param)
-            strdata = (ctypes.c_char * strsize).from_buffer(bytearray(param, 'ascii'))
-
+            # direct string        
             self._vjptr = vastjson_lib.vastjson_init_string(strdata, strsize)
             if self._vjptr == 0:
                 raise ValueError('Error! No VastJSON C++ Pointer returned')
-        # more options here?
+        else:
+            print("OTHER...")
+            #self._vjptr = None
+            self._vjptr = vastjson_lib.vastjson_init_filename(strdata, strsize, mode)
+            if self._vjptr == 0:
+                raise ValueError('Error! No VastJSON C++ Pointer returned')
+            # more options here?
 
     def __del__(self):
         #print("EXIT")
@@ -84,6 +90,12 @@ class VastJSON(object):
         #vastjson_lib.vastjson_free_string_ptr(charptr)
         return local_str
     
+    def getUntil(self, param: str = "", count:int = -1):
+        print("GET UNTIL")
+        strsize = len(param)
+        strdata = (ctypes.c_char * strsize).from_buffer(bytearray(param, 'ascii'))
+        vastjson_lib.vastjson_at_cache(self._vjptr, strdata, strsize, count)
+
     def size(self):
         return vastjson_lib.vastjson_size(self._vjptr)
 

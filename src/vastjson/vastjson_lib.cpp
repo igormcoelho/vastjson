@@ -85,3 +85,11 @@ vastjson_cache_size(void *obj)
     vastjson::VastJSON* vobj = (vastjson::VastJSON*) obj;
     return vobj->cacheSize();
 }
+
+extern "C" void
+vastjson_get_until(void *obj, const char *targetKey, int sz_vr, int count_keys)
+{
+    vastjson::VastJSON* vobj = (vastjson::VastJSON*) obj;
+    std::string key(targetKey);
+    vobj->getUntil(key, count_keys);
+}

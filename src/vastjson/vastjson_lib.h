@@ -32,6 +32,10 @@ vastjson_at_cache(void *obj, const char *targetKey, int sz_vr);
 //gets string from cache
 
 extern "C" void
+vastjson_get_until(void *obj, const char *targetKey, int sz_vr, int count_keys);
+//void getUntil(std::string targetKey = "", int count_keys = -1)
+
+extern "C" void
 vastjson_free_string_ptr(char *str);
 //frees string
 

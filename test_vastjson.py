@@ -6,3 +6,9 @@ print(x)
 
 print(vjson.size())
 print(vjson.cacheSize())
+
+
+vjson2 = VastJSON("tests/testdata/test2.json", 0)
+print(vjson2.cacheSize())
+print(vjson2.size())
+print(vjson2.cacheSize())
