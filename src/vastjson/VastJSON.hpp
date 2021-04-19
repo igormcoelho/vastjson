@@ -99,9 +99,9 @@ namespace vastjson
     enum ModeVastJSON
     {
         // strategy for big dictionaries/objects on root level
-        BIG_ROOT_DICT_GENERIC,
+        BIG_ROOT_DICT_GENERIC = 0,
         // strategy for big dictionaries/objects on root level (do not allow lists as top-level entries)
-        BIG_ROOT_DICT_NO_ROOT_LIST,
+        BIG_ROOT_DICT_NO_ROOT_LIST = 1,
         // BIG_ROOT_LIST (TODO),
         // BIG_TARGET_ELEMENT (TODO),
         // NOT_BIG (TODO)
@@ -122,6 +122,15 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
+
+        std::ifstream& getIfsptr() {
+            return *ifsptr;
+        }
+
+        int& getCountParIfsptr() {
+            return this->count_par_ifsptr;
+        }
+
         // storing error flag here
         bool hasError = false;
         //
@@ -193,6 +202,10 @@ namespace vastjson
         const nlohmann::json &operator[](std::string key) const
         {
             return this->getKey(key);
+        }
+
+        std::string& atCache(std::string key) {
+            return this->cache[key];
         }
 
         // get key in json structured format (not REALLY const...)
@@ -395,6 +408,7 @@ namespace vastjson
             while ((pk == ' ') || (pk == '\t') || (pk == '\r') || (pk == '\n')) // TODO: more here?
             {
                 int gc = is.get();
+                gc = gc;
                 //std::cout << "gc='" << gc<< "' pk='" << pk << "'" << std::endl;
                 //assert(gc == pk); // OBVIOUS TRUTH!
                 pk = is.peek();
@@ -404,6 +418,7 @@ namespace vastjson
             //
         }
 
+    public:
         // perform string caching until 'targetKey' is found (or stream is ended)
         void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
         {
@@ -413,6 +428,7 @@ namespace vastjson
                 cacheUntilGeneric(is, count_par, targetKey, count_keys);
         }
 
+    private:
         // IMPLEMENTATION THAT ALLOWS GENERIC JSON (SLOWER...)
         void cacheUntilGeneric(std::istream &is, int &count_par, std::string targetKey, int count_keys)
         {
