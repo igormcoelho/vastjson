@@ -226,3 +226,35 @@ TEST_CASE("bigj begin() end()")
     // stream must not exist
     REQUIRE(!bigj.isPending());
 }
+
+
+
+TEST_CASE("bigj istringstream from file")
+{
+    std::ifstream f("testdata/test2.json");
+    if(!f)
+        return;
+    std::stringstream sss;
+    sss << f.rdbuf();
+    //
+    std::unique_ptr<std::istream> is { new std::istringstream(sss.str()) };
+    //
+    VastJSON bigj{ std::move(is) };
+
+    // stream must exist
+    REQUIRE(bigj.isPending());
+    int count = 0;
+    for(auto it = bigj.beginCache(); it != bigj.endCache(); it++)
+        count++;
+    // count is zero
+    REQUIRE(count == 0);
+    count = 0;
+    for(auto it = bigj.begin(); it != bigj.end(); it++)
+        count++;
+    // count is full
+    REQUIRE(count == 3);
+    // cache size must be three
+    REQUIRE(bigj.cacheSize() == 3);
+    // stream must not exist
+    REQUIRE(!bigj.isPending());
+}
