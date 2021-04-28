@@ -200,3 +200,29 @@ TEST_CASE("bigj test local")
     // mode should not allow lists on top (TODO: maybe flag some error() internal field in this situation?)
     REQUIRE(bigj3.getMode() == BIG_ROOT_DICT_NO_ROOT_LIST);
 }
+
+
+
+TEST_CASE("bigj begin() end()")
+{
+    //std::cout << std::endl << " ======= getUntil ======= " << std::endl;
+    std::unique_ptr<std::ifstream> ifs{new std::ifstream("testdata/test2.json")};
+    VastJSON bigj{std::move(ifs)};
+
+    // stream must exist
+    REQUIRE(bigj.isPending());
+    int count = 0;
+    for(auto it = bigj.beginCache(); it != bigj.endCache(); it++)
+        count++;
+    // count is zero
+    REQUIRE(count == 0);
+    count = 0;
+    for(auto it = bigj.begin(); it != bigj.end(); it++)
+        count++;
+    // count is full
+    REQUIRE(count == 3);
+    // cache size must be three
+    REQUIRE(bigj.cacheSize() == 3);
+    // stream must not exist
+    REQUIRE(!bigj.isPending());
+}

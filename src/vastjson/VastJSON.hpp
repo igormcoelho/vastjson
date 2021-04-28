@@ -141,6 +141,9 @@ namespace vastjson
 
         const auto begin() const
         {
+            // force compute cache
+            size();
+            // cache is now complete
             return cache.begin();
         }
 
@@ -148,6 +151,18 @@ namespace vastjson
         {
             return cache.end();
         }
+
+        const auto beginCache() const
+        {
+            // cache may not be complete
+            return cache.begin();
+        }
+
+        const auto endCache() const
+        {
+            return cache.end();
+        }
+
 
         bool isPending() const
         {
