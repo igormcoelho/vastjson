@@ -116,14 +116,14 @@ namespace vastjson
         // read string cache
         std::map<std::string, std::string> cache;
         // pending reads
-        std::unique_ptr<std::ifstream> ifsptr;
+        std::unique_ptr<std::istream> ifsptr;
         // count delimiters {} for ifsptr
         // this variable was local, now it's global since stream consumption can be continued over ifsptr
         int count_par_ifsptr = 0;
 
     public:
 
-        std::ifstream& getIfsptr() {
+        std::istream& getIfsptr() {
             return *ifsptr;
         }
 
@@ -320,7 +320,7 @@ namespace vastjson
         }
 
         // lazy processing
-        VastJSON(std::unique_ptr<std::ifstream> &&_ifsptr, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+        VastJSON(std::unique_ptr<std::istream> &&_ifsptr, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{std::move(_ifsptr)}
         {
         }
@@ -330,9 +330,10 @@ namespace vastjson
             : mode{_mode}, ifsptr{new std::ifstream{std::move(_if)}}
         {
         }
+        
 
         // lazy processing: transfer ownership of _if to VastJSON
-        VastJSON(std::ifstream *_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+        VastJSON(std::istream *_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{_if}
         {
         }
