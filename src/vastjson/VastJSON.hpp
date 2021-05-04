@@ -1,4 +1,4 @@
-// This code is part of VastJSON library: parsers for giant json files 
+// This code is part of VastJSON library: parsers for giant json files
 // It makes heavy usage of <nlohmann/json.hpp> library (also MIT licensed)
 // Project website: https://github.com/igormcoelho/vastjson
 // author: Igor Machado Coelho
@@ -105,6 +105,8 @@ namespace vastjson
         // BIG_ROOT_LIST (TODO),
         // BIG_TARGET_ELEMENT (TODO),
         // NOT_BIG (TODO)
+        // strict mode fully checks integrity of json (not good for huge entries)
+        BIG_STRICT = 99
     };
 
     class VastJSON final
@@ -122,12 +124,13 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
-
-        std::istream& getIfsptr() {
+        std::istream &getIfsptr()
+        {
             return *ifsptr;
         }
 
-        int& getCountParIfsptr() {
+        int &getCountParIfsptr()
+        {
             return this->count_par_ifsptr;
         }
 
@@ -162,7 +165,6 @@ namespace vastjson
         {
             return cache.end();
         }
-
 
         bool isPending() const
         {
@@ -219,7 +221,8 @@ namespace vastjson
             return this->getKey(key);
         }
 
-        std::string& atCache(std::string key) {
+        std::string &atCache(std::string key)
+        {
             return this->cache[key];
         }
 
@@ -304,38 +307,93 @@ namespace vastjson
         //     constructors
         // ======================
 
+    private:
+        // load strict mode (manually parse whole file)
+        void loadStrict(std::string &str)
+        {
+            this->cache.clear(); // start empty
+            this->jsons.clear(); // start empty
+            nlohmann::json jstrict = nlohmann::json::parse(str);
+            str = "";
+            for (nlohmann::json::iterator it = jstrict.begin(); it != jstrict.end(); ++it)
+            {
+                this->cache[it.key()] = "";
+                this->jsons[it.key()] = it.value();
+            }
+        }
+
+        // load strict mode (directly from ifsptr)
+        void loadStrictFromIfsptr() {
+            if(!ifsptr) {
+                std::cerr << "WARNING: VastJSON BIG_STRICT has no stream to read." << std::endl; 
+                this->hasError = true;
+                return; // no stream
+            }
+            std::istream& is = *ifsptr;
+            if(!is) {
+                // nothing to read from stream, drop stream
+                ifsptr = nullptr; // TODO: is this really important? For now, I think so.
+                return;
+            }
+            //
+            std::string str(std::istreambuf_iterator<char>(is), {});
+            ifsptr = nullptr; // TODO: is this really important? For now, I think so.
+            loadStrict(str);
+        }
+
+    public:
         // string will be immediately processed (for top-level items)
         VastJSON(std::string &str, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC) : mode{_mode}
         {
-            std::istringstream is(str);
-            int count_par = 0; // reading from level 0
-            cacheUntil(is, count_par);
+            if (mode == BIG_STRICT)
+            {
+                loadStrict(str);
+            }
+            else
+            {
+                std::istringstream is(str);
+                int count_par = 0; // reading from level 0
+                cacheUntil(is, count_par);
+            }
         }
 
         // istream will be immediately processed (for top-level items)
         VastJSON(std::istream &is, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC) : mode{_mode}
         {
-            int count_par = 0; // reading from level 0
-            cacheUntil(is, count_par);
+            if (mode == BIG_STRICT)
+            {
+                std::string str(std::istreambuf_iterator<char>(is), {});
+                loadStrict(str);
+            }
+            else
+            {
+                int count_par = 0; // reading from level 0
+                cacheUntil(is, count_par);
+            }
         }
 
         // lazy processing
         VastJSON(std::unique_ptr<std::istream> &&_ifsptr, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{std::move(_ifsptr)}
         {
+            if (mode == BIG_STRICT)
+                loadStrictFromIfsptr();
         }
 
         // lazy processing
         VastJSON(std::ifstream &&_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{new std::ifstream{std::move(_if)}}
         {
+            if (mode == BIG_STRICT)
+                loadStrictFromIfsptr();
         }
-        
 
         // lazy processing: transfer ownership of _if to VastJSON
         VastJSON(std::istream *_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{_if}
         {
+            if (mode == BIG_STRICT)
+                loadStrictFromIfsptr();
         }
 
         ~VastJSON()
@@ -438,10 +496,22 @@ namespace vastjson
         // perform string caching until 'targetKey' is found (or stream is ended)
         void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
         {
-            if (mode == ModeVastJSON::BIG_ROOT_DICT_NO_ROOT_LIST)
+            if (mode == ModeVastJSON::BIG_ROOT_DICT_NO_ROOT_LIST) {
                 cacheUntilNoRootList(is, count_par, targetKey, count_keys);
-            else // ModeVastJSON::BIG_ROOT_DICT_GENERIC
+                return;
+            }
+            else if(mode == ModeVastJSON::BIG_ROOT_DICT_GENERIC) {
                 cacheUntilGeneric(is, count_par, targetKey, count_keys);
+                return;
+            }
+            else if(mode == ModeVastJSON::BIG_STRICT) 
+            {
+                // nothing to do (already loaded)
+                return;
+            }
+            
+            std::cerr << "WARNING: VastJSON cacheUntil has no 'mode'" << std::endl;
+            this->hasError = true;
         }
 
     private:
