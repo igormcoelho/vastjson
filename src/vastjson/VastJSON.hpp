@@ -11,10 +11,10 @@
 #error VastJSON must be included before nlohmann::json. See https://github.com/igormcoelho/vastjson/issues/4
 #endif
 
-#include <sstream>
 #include <fstream>
-#include <vector>
 #include <memory>
+#include <sstream>
+#include <vector>
 //
 #include <iostream> // TODO REMOVE
 //
@@ -63,7 +63,8 @@ namespace nlohmann
         };
 
         template <class T>
-        inline custom_stream_adapter<T> input_adapter(std::shared_ptr<T> &stream_ptr)
+        inline custom_stream_adapter<T>
+        input_adapter(std::shared_ptr<T> &stream_ptr)
         {
             return custom_stream_adapter<T>(stream_ptr);
         }
@@ -84,7 +85,8 @@ namespace vastjson
         std::istream *is;
         std::string cache;
 
-        CacheStream(std::istream *_is) : is(_is)
+        CacheStream(std::istream *_is)
+            : is(_is)
         {
         }
 
@@ -109,6 +111,7 @@ namespace vastjson
         BIG_STRICT = 99
     };
 
+    //
     class VastJSON final
     {
     private:
@@ -124,6 +127,14 @@ namespace vastjson
         int count_par_ifsptr = 0;
 
     public:
+        void clear()
+        {
+            jsons.clear();
+            cache.clear();
+            ifsptr = nullptr;
+            count_par_ifsptr = 0;
+        }
+
         std::istream &getIfsptr()
         {
             return *ifsptr;
@@ -270,6 +281,7 @@ namespace vastjson
             }
 
             // TODO: continue even with error (or return 'optional' for recovery?)
+            assert(cache[key].length() > 0);
             jsons[key] = nlohmann::json::parse(std::move(cache[key]));
             cache[key] = "";
             return jsons[key];
@@ -323,14 +335,17 @@ namespace vastjson
         }
 
         // load strict mode (directly from ifsptr)
-        void loadStrictFromIfsptr() {
-            if(!ifsptr) {
-                std::cerr << "WARNING: VastJSON BIG_STRICT has no stream to read." << std::endl; 
+        void loadStrictFromIfsptr()
+        {
+            if (!ifsptr)
+            {
+                std::cerr << "WARNING: VastJSON BIG_STRICT has no stream to read." << std::endl;
                 this->hasError = true;
                 return; // no stream
             }
-            std::istream& is = *ifsptr;
-            if(!is) {
+            std::istream &is = *ifsptr;
+            if (!is)
+            {
                 // nothing to read from stream, drop stream
                 ifsptr = nullptr; // TODO: is this really important? For now, I think so.
                 return;
@@ -342,8 +357,14 @@ namespace vastjson
         }
 
     public:
+        VastJSON()
+            : mode{ModeVastJSON::BIG_ROOT_DICT_GENERIC}, ifsptr{nullptr}
+        {
+        }
+
         // string will be immediately processed (for top-level items)
-        VastJSON(std::string &str, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC) : mode{_mode}
+        VastJSON(std::string &str, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+            : mode{_mode}
         {
             if (mode == BIG_STRICT)
             {
@@ -358,7 +379,8 @@ namespace vastjson
         }
 
         // istream will be immediately processed (for top-level items)
-        VastJSON(std::istream &is, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC) : mode{_mode}
+        VastJSON(std::istream &is, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+            : mode{_mode}
         {
             if (mode == BIG_STRICT)
             {
@@ -376,6 +398,7 @@ namespace vastjson
         VastJSON(std::unique_ptr<std::istream> &&_ifsptr, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{std::move(_ifsptr)}
         {
+            assert(ifsptr->good());
             if (mode == BIG_STRICT)
                 loadStrictFromIfsptr();
         }
@@ -384,6 +407,7 @@ namespace vastjson
         VastJSON(std::ifstream &&_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{new std::ifstream{std::move(_if)}}
         {
+            assert(ifsptr->good());
             if (mode == BIG_STRICT)
                 loadStrictFromIfsptr();
         }
@@ -392,12 +416,36 @@ namespace vastjson
         VastJSON(std::istream *_if, ModeVastJSON _mode = ModeVastJSON::BIG_ROOT_DICT_GENERIC)
             : mode{_mode}, ifsptr{_if}
         {
+            assert(ifsptr->good());
             if (mode == BIG_STRICT)
                 loadStrictFromIfsptr();
         }
 
         ~VastJSON()
         {
+        }
+
+        VastJSON(VastJSON &&corpse)
+            : mode{corpse.mode}, ifsptr{std::move(corpse.ifsptr)}
+        {
+            // TODO: STEAL the rest
+            assert(ifsptr->good());
+        }
+
+        VastJSON &operator=(VastJSON &&other_corpse)
+        {
+            if (this == &other_corpse)
+                return *this; // self-check
+            //
+            clear(); // kill everything
+            //
+            this->mode = other_corpse.mode;
+            this->jsons = std::move(other_corpse.jsons);
+            this->cache = std::move(other_corpse.cache);
+            this->ifsptr = std::move(other_corpse.ifsptr);
+            this->count_par_ifsptr = std::move(other_corpse.count_par_ifsptr);
+            //
+            return *this;
         }
 
     private:
@@ -496,20 +544,22 @@ namespace vastjson
         // perform string caching until 'targetKey' is found (or stream is ended)
         void cacheUntil(std::istream &is, int &count_par, std::string targetKey = "", int count_keys = -1)
         {
-            if (mode == ModeVastJSON::BIG_ROOT_DICT_NO_ROOT_LIST) {
+            if (mode == ModeVastJSON::BIG_ROOT_DICT_NO_ROOT_LIST)
+            {
                 cacheUntilNoRootList(is, count_par, targetKey, count_keys);
                 return;
             }
-            else if(mode == ModeVastJSON::BIG_ROOT_DICT_GENERIC) {
+            else if (mode == ModeVastJSON::BIG_ROOT_DICT_GENERIC)
+            {
                 cacheUntilGeneric(is, count_par, targetKey, count_keys);
                 return;
             }
-            else if(mode == ModeVastJSON::BIG_STRICT) 
+            else if (mode == ModeVastJSON::BIG_STRICT)
             {
                 // nothing to do (already loaded)
                 return;
             }
-            
+
             std::cerr << "WARNING: VastJSON cacheUntil has no 'mode'" << std::endl;
             this->hasError = true;
         }
